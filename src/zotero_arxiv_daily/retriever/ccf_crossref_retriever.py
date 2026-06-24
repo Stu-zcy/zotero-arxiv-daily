@@ -8,7 +8,7 @@ from typing import Any
 
 import requests
 from loguru import logger
-from omegaconf import ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from requests import HTTPError
 
 from ..protocol import Paper
@@ -117,17 +117,45 @@ def _crossref_type_for_venue(venue: dict[str, str]) -> str | None:
     return None
 
 
+def _venue_expected_names(venue: dict[str, str]) -> list[str]:
+    abbr = _normalize_text(venue.get("简称") or "")
+    name = _normalize_text(venue.get("全称") or "")
+    expected = [value for value in [name, abbr] if value]
+    aliases = {
+        "crypto": [
+            "advances in cryptology crypto",
+            "annual international cryptology conference",
+        ],
+        "eurocrypt": [
+            "advances in cryptology eurocrypt",
+            "international conference on the theory and applications of cryptographic techniques",
+        ],
+        "asiacrypt": [
+            "advances in cryptology asiacrypt",
+            "international conference on the theory and application of cryptology and information security",
+            "annual international conference on the theory and application of cryptology and information security",
+        ],
+    }
+    expected.extend(aliases.get(abbr, []))
+    return list(dict.fromkeys(expected))
+
+
+def _container_matches_target(container: str, target: str) -> bool:
+    if container == target:
+        return True
+    normalized_container = re.sub(r"^(proceedings of|proceedings)\s+", "", container).strip()
+    if normalized_container == target:
+        return True
+    return normalized_container.startswith(f"{target} ")
+
+
 def _venue_matches(item: dict[str, Any], venue: dict[str, str]) -> bool:
     container_titles = [_normalize_text(str(t)) for t in item.get("container-title") or [] if t]
     short_titles = [_normalize_text(str(t)) for t in item.get("short-container-title") or [] if t]
-    expected = [_normalize_text(venue.get("全称") or ""), _normalize_text(venue.get("简称") or "")]
-    expected = [value for value in expected if value]
+    expected = _venue_expected_names(venue)
     for container in container_titles + short_titles:
         for target in expected:
-            if container == target:
-                return True
-            normalized_container = re.sub(r"^(proceedings of|proceedings)\s+", "", container).strip()
-            if normalized_container == target:
+            if _container_matches_target(container, target):
                 return True
     return False
 
@@ -135,6 +163,8 @@ def _venue_matches(item: dict[str, Any], venue: dict[str, str]) -> bool:
 def _topic_matches(searchable: str, topics: list[dict[str, Any]], min_score: int) -> tuple[bool, list[str]]:
     matched_topics = []
     for topic in topics:
+        if isinstance(topic, DictConfig):
+            topic = OmegaConf.to_container(topic, resolve=True)
         if not isinstance(topic, dict):
             continue
         keywords = [str(k).lower() for k in _as_list(topic.get("keywords")) if k]

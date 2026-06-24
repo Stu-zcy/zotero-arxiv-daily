@@ -1,8 +1,14 @@
 import json
 
-from omegaconf import open_dict
+from omegaconf import OmegaConf, open_dict
 
-from zotero_arxiv_daily.retriever.ccf_crossref_retriever import CcfCrossrefRetriever, _keyword_in_text, _topic_matches, _venue_matches
+from zotero_arxiv_daily.retriever.ccf_crossref_retriever import (
+    CcfCrossrefRetriever,
+    _keyword_in_text,
+    _normalize_text,
+    _topic_matches,
+    _venue_matches,
+)
 
 
 def test_crossref_venue_matches_container_title():
@@ -10,6 +16,23 @@ def test_crossref_venue_matches_container_title():
     assert _venue_matches({"container-title": ["Journal of Cryptology"]}, venue)
     assert _venue_matches({"short-container-title": ["JoC"]}, venue)
     assert not _venue_matches({"container-title": ["Lecture Notes in Computer Science"]}, venue)
+
+
+def test_crossref_venue_matches_crypto_proceedings_aliases():
+    crypto = {"简称": "CRYPTO", "全称": "International Cryptology Conference"}
+    eurocrypt = {
+        "简称": "EUROCRYPT",
+        "全称": "International Conference on the Theory and Applications of Cryptographic Techniques",
+    }
+    asiacrypt = {
+        "简称": "ASIACRYPT",
+        "全称": "Annual International Conference on the Theory and Application of Cryptology and Information Security",
+    }
+
+    assert _venue_matches({"container-title": ["Advances in Cryptology - CRYPTO 2026"]}, crypto)
+    assert _venue_matches({"container-title": ["Advances in Cryptology - EUROCRYPT 2026"]}, eurocrypt)
+    assert _venue_matches({"container-title": ["Advances in Cryptology - ASIACRYPT 2026"]}, asiacrypt)
+    assert not _venue_matches({"container-title": ["Lecture Notes in Computer Science"]}, crypto)
 
 
 def test_topic_matches_distinguish_user_profiles():
@@ -39,6 +62,32 @@ def test_short_keywords_require_word_boundaries():
     assert not _keyword_in_text("sis", searchable)
     assert _keyword_in_text("gpu", searchable)
     assert _keyword_in_text("spatial sharing", searchable)
+
+
+def test_topic_matches_hydra_dictconfig_for_new_user_directions():
+    topics = OmegaConf.create(
+        [
+            {
+                "name": "secure-protocols",
+                "keywords": ["kem", "mkem", "tls", "authenticated key exchange"],
+            },
+            {
+                "name": "fhe-implementation",
+                "keywords": ["autohog", "salus", "circuit bootstrapping", "fully homomorphic"],
+            },
+        ]
+    )
+
+    assert _topic_matches(
+        _normalize_text("A modular KEM for post-quantum TLS 1.3 authenticated key exchange"),
+        topics,
+        min_score=2,
+    ) == (True, ["secure-protocols"])
+    assert _topic_matches(
+        _normalize_text("AutoHoG and SALUS style circuit bootstrapping for fully homomorphic encryption"),
+        topics,
+        min_score=2,
+    ) == (True, ["fhe-implementation"])
 
 
 def test_ccf_crossref_retriever_filters_dates_container_keywords_and_doi(config, tmp_path, monkeypatch):

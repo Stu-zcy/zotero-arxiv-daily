@@ -49,6 +49,11 @@ users:
             - ml-kem
             - ml-dsa
             - nist post-quantum
+            - kem
+            - mkem
+            - m-kem
+            - key encapsulation
+            - modular key encapsulation
             - gpu
             - fpga
             - accelerator
@@ -71,7 +76,22 @@ users:
             - public key
             - public-key encryption
             - kem
+            - mkem
+            - m-kem
             - key encapsulation
+        - name: secure-protocols
+          keywords:
+            - tls
+            - tls 1.3
+            - transport layer security
+            - ake
+            - authenticated key exchange
+            - key exchange
+            - hybrid key exchange
+            - post-quantum tls
+            - pq tls
+            - tls handshake
+            - signal protocol
         - name: commitments
           keywords:
             - commitment
@@ -97,10 +117,19 @@ users:
         - hash-based PQC
         - PQC GPU
         - post-quantum GPU acceleration
+        - key encapsulation mechanism
+        - KEM
+        - mKEM
+        - post-quantum TLS
+        - authenticated key exchange
+        - TLS 1.3
         - lattice cryptography
         - lattice based cryptography
         - public key cryptography
         - commitment scheme
+        - CRYPTO cryptography
+        - EUROCRYPT cryptography
+        - ASIACRYPT cryptography
       keywords:
         - fully homomorphic
         - homomorphic encryption
@@ -127,6 +156,19 @@ users:
         - falcon
         - ml-kem
         - ml-dsa
+        - kem
+        - mkem
+        - m-kem
+        - key encapsulation
+        - tls
+        - tls 1.3
+        - transport layer security
+        - ake
+        - authenticated key exchange
+        - key exchange
+        - hybrid key exchange
+        - post-quantum tls
+        - tls handshake
         - public-key
         - public key
         - public-key encryption
@@ -196,9 +238,21 @@ users:
             - fhe accelerator
             - fhe hardware
             - fhe circuit
+            - circuit privacy
+            - boolean circuit
+            - arithmetic circuit
+            - encrypted circuit
+            - circuit bootstrapping
+            - autohog
+            - salus
       search_queries:
         - fully homomorphic encryption
         - FHE circuit construction
+        - AutoHoG fully homomorphic encryption
+        - SALUS fully homomorphic encryption
+        - FHE circuit privacy
+        - FHE circuit bootstrapping
+        - homomorphic circuit evaluation
         - homomorphic evaluation
         - homomorphic bootstrapping
         - lattice cryptography
@@ -218,6 +272,13 @@ users:
         - bootstrapping
         - programmable bootstrapping
         - fhe circuit
+        - circuit privacy
+        - boolean circuit
+        - arithmetic circuit
+        - encrypted circuit
+        - circuit bootstrapping
+        - autohog
+        - salus
         - lattice
         - lattice-based
         - lattice based

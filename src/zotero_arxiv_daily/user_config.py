@@ -152,6 +152,7 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             config.executor.source = ["arxiv", "iacr_eprint"]
             config.source.arxiv.category = ["cs.CR", "cs.DS", "cs.IT"]
             config.source.arxiv.include_cross_list = True
+            config.source.arxiv.extract_full_text = False
             config.source.iacr_eprint.lookback_days = 1
             if args.send_email is not None:
                 config.executor.send_empty = bool(args.send_email)

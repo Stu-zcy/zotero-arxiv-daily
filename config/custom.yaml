@@ -35,6 +35,7 @@ source:
   arxiv:
     category: ["cs.CR","cs.DS","cs.IT"]
     include_cross_list: true
+    extract_full_text: false
     max_batch_retries: 2
     batch_retry_delay: 20
     request_delay: 3

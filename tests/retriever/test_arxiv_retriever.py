@@ -4,6 +4,7 @@ import time
 from types import SimpleNamespace
 
 import feedparser
+from omegaconf import open_dict
 
 from zotero_arxiv_daily.retriever.arxiv_retriever import ArxivRetriever, _run_with_hard_timeout
 import zotero_arxiv_daily.retriever.arxiv_retriever as arxiv_retriever
@@ -61,6 +62,51 @@ def test_arxiv_retriever(config, mock_feedparser, monkeypatch):
 
     assert len(papers) == len(new_entries)
     assert set(p.title for p in papers) == set(e.title for e in new_entries)
+
+
+def test_arxiv_profile_filter_keeps_crypto_and_drops_generic_ai(config):
+    with open_dict(config):
+        config.source.arxiv.keyword_required = True
+        config.source.arxiv.min_topic_score = 2
+        config.source.arxiv.topics = [
+            {
+                "name": "fhe",
+                "keywords": ["fully homomorphic", "homomorphic encryption", "fhe", "bootstrapping"],
+            },
+            {
+                "name": "pqc",
+                "keywords": ["pqc", "post-quantum", "hash-based", "gpu"],
+            },
+        ]
+
+    retriever = ArxivRetriever(config)
+    raw = [
+        SimpleNamespace(
+            title="Securing LLM-Agent Long-Term Memory Against Poisoning",
+            summary="This paper studies AI agents and prompt injection.",
+            primary_category="cs.CR",
+            categories=["cs.CR", "cs.AI"],
+        ),
+        SimpleNamespace(
+            title="ComputeFHE: A Privacy-Preserving General-Purpose Computation Library",
+            summary="We use fully homomorphic encryption and bootstrapping for private computation.",
+            primary_category="cs.CR",
+            categories=["cs.CR"],
+        ),
+        SimpleNamespace(
+            title="GRASP: Accelerating Hash-Based PQC Performance on GPU Parallel Architecture",
+            summary="This paper accelerates post-quantum signatures.",
+            primary_category="cs.CR",
+            categories=["cs.CR"],
+        ),
+    ]
+
+    filtered = retriever._filter_by_profile(raw)
+
+    assert [paper.title for paper in filtered] == [
+        "ComputeFHE: A Privacy-Preserving General-Purpose Computation Library",
+        "GRASP: Accelerating Hash-Based PQC Performance on GPU Parallel Architecture",
+    ]
 
 
 def test_run_with_hard_timeout_returns_value():

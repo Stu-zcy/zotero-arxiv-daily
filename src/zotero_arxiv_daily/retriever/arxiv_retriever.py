@@ -13,12 +13,51 @@ from time import sleep
 from typing import Any, Callable, TypeVar
 from loguru import logger
 import requests
+import re
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 T = TypeVar("T")
 
 DOWNLOAD_TIMEOUT = (10, 60)
 PDF_EXTRACT_TIMEOUT = 180
 TAR_EXTRACT_TIMEOUT = 180
+
+
+def _as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, ListConfig)):
+        return list(value)
+    return [value]
+
+
+def _normalize_text(value: str) -> str:
+    value = value.lower()
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _keyword_in_text(keyword: str, searchable: str) -> bool:
+    normalized_keyword = _normalize_text(keyword)
+    if not normalized_keyword:
+        return False
+    # SIS is common as a substring in unrelated English words such as "analysis".
+    if normalized_keyword == "sis":
+        return re.search(rf"\b{re.escape(normalized_keyword)}\b", searchable) is not None
+    return normalized_keyword in searchable
+
+
+def _topic_matches(searchable: str, topics: list[dict[str, Any]], min_score: int) -> bool:
+    for topic in topics:
+        if isinstance(topic, DictConfig):
+            topic = OmegaConf.to_container(topic, resolve=True)
+        if not isinstance(topic, dict):
+            continue
+        keywords = [str(k).lower() for k in _as_list(topic.get("keywords")) if k]
+        hits = {keyword for keyword in keywords if _keyword_in_text(keyword, searchable)}
+        if len(hits) >= min_score:
+            return True
+    return False
 
 
 def _download_file(url: str, path: str) -> None:
@@ -155,7 +194,30 @@ class ArxivRetriever(BaseRetriever):
                 sleep(request_delay)
         bar.close()
 
-        return raw_papers
+        return self._filter_by_profile(raw_papers)
+
+    def _filter_by_profile(self, raw_papers: list[ArxivResult]) -> list[ArxivResult]:
+        if not self.retriever_config.get("keyword_required"):
+            return raw_papers
+        topics = [
+            topic
+            for topic in _as_list(self.retriever_config.get("topics"))
+            if (isinstance(topic, (dict, DictConfig)) and topic.get("keywords"))
+        ]
+        if not topics:
+            return raw_papers
+        min_score = int(self.retriever_config.get("min_topic_score") or 2)
+        filtered = []
+        for paper in raw_papers:
+            categories = " ".join(str(c) for c in _as_list(getattr(paper, "categories", [])))
+            searchable = _normalize_text(
+                f"{getattr(paper, 'title', '')} {getattr(paper, 'summary', '')} "
+                f"{getattr(paper, 'primary_category', '')} {categories}"
+            )
+            if _topic_matches(searchable, topics, min_score):
+                filtered.append(paper)
+        logger.info(f"arXiv profile filter kept {len(filtered)}/{len(raw_papers)} papers")
+        return filtered
 
     def convert_to_paper(self, raw_paper: ArxivResult) -> Paper:
         title = raw_paper.title

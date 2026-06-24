@@ -64,7 +64,7 @@ users:
     updated = apply_runtime_config(config, RuntimeArgs(user="liruoyi", mode="daily"), root=tmp_path)
 
     assert list(updated.executor.source) == ["arxiv", "iacr_eprint"]
-    assert list(updated.source.arxiv.category) == ["cs.CR", "cs.DS", "cs.IT"]
-    assert updated.source.arxiv.include_cross_list is True
+    assert list(updated.source.arxiv.category) == ["cs.CR"]
+    assert updated.source.arxiv.include_cross_list is False
     assert updated.state.enabled is True
     assert updated.state.ignore_seen is False

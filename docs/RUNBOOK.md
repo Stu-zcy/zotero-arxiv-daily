@@ -2,7 +2,7 @@
 
 This repository runs two kinds of paper digests:
 
-- Daily: arXiv `cs.CR/cs.DS/cs.IT` plus IACR ePrint RSS.
+- Daily: arXiv `cs.CR` primary announcements, user-topic filtering, plus IACR ePrint RSS.
 - Monthly/range: CCF 2026 A/B venues selected per user profile, retrieved from Crossref and filtered by user-specific topic groups. The default profiles include `网络与信息安全`, `计算机科学理论`, and selected `计算机体系结构/并行与分布计算/存储系统` venues so cryptographic implementation papers such as PQC/FHE acceleration are not missed.
 
 ## 1. Install

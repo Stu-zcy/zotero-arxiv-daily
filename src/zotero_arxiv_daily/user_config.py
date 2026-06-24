@@ -72,7 +72,7 @@ def _apply_profile(config: DictConfig, user_cfg: DictConfig) -> None:
     search_queries = _as_plain_list(profile.get("search_queries"))
     topics = _as_plain_list(profile.get("topics"))
     min_topic_score = profile.get("min_topic_score")
-    for source in ("ccf_crossref", "ccf_openalex", "iacr_eprint"):
+    for source in ("arxiv", "ccf_crossref", "ccf_openalex", "iacr_eprint"):
         if not hasattr(config.source, source):
             continue
         if keywords and hasattr(getattr(config.source, source), "keywords"):
@@ -150,8 +150,8 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
 
         if mode == "daily":
             config.executor.source = ["arxiv", "iacr_eprint"]
-            config.source.arxiv.category = ["cs.CR", "cs.DS", "cs.IT"]
-            config.source.arxiv.include_cross_list = True
+            config.source.arxiv.category = ["cs.CR"]
+            config.source.arxiv.include_cross_list = False
             config.source.arxiv.extract_full_text = False
             config.source.iacr_eprint.lookback_days = 1
             if args.send_email is not None:

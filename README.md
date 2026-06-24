@@ -13,7 +13,7 @@
 
 系统支持两类推送：
 
-- `daily`: arXiv `cs.CR/cs.DS/cs.IT` + IACR ePrint RSS
+- `daily`: arXiv `cs.CR` 主类 + 用户 topic 过滤 + IACR ePrint RSS
 - `monthly` / `test-range`: CCF 2026 A/B venue + Crossref 检索 + 用户 topic 过滤
 
 Zotero 不是主搜索源，而是 rerank 语料。月度候选主要由每个用户的 `users.yaml` profile 决定。

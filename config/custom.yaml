@@ -33,9 +33,12 @@ llm:
 
 source:
   arxiv:
-    category: ["cs.CR","cs.DS","cs.IT"]
-    include_cross_list: true
+    category: ["cs.CR"]
+    include_cross_list: false
     extract_full_text: false
+    keyword_required: true
+    min_topic_score: 2
+    topics: []
     max_batch_retries: 2
     batch_retry_delay: 20
     request_delay: 3

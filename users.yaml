@@ -199,10 +199,14 @@ users:
       search_queries:
         - fully homomorphic encryption
         - FHE circuit construction
+        - homomorphic evaluation
+        - homomorphic bootstrapping
         - lattice cryptography
         - lattice based cryptography
-        - public key cryptography
-        - commitment scheme
+        - LWE
+        - RLWE
+        - SIS
+        - NTRU
       keywords:
         - fully homomorphic
         - homomorphic encryption
@@ -222,22 +226,6 @@ users:
         - lwr
         - sis
         - ntru
-        - post-quantum
-        - post quantum
-        - pqc
-        - kyber
-        - dilithium
-        - falcon
-        - ml-kem
-        - ml-dsa
-        - public-key
-        - public key
-        - public-key encryption
-        - kem
-        - key encapsulation
-        - commitment
-        - polynomial commitment
-        - vector commitment
     monthly:
       ccf_fields:
         - 网络与信息安全

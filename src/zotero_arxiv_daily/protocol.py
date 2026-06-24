@@ -27,10 +27,20 @@ class Paper:
     tldr: Optional[str] = None
     affiliations: Optional[list[str]] = None
     score: Optional[float] = None
+    published_date: Optional[str] = None
+    venue: Optional[str] = None
+    venue_abbr: Optional[str] = None
+    source_label: Optional[str] = None
+    topic_labels: Optional[list[str]] = None
 
     def _generate_tldr_with_llm(self, openai_client:OpenAI,llm_params:dict) -> str:
         lang = llm_params.get('language', 'English')
-        prompt = f"Given the following information of a paper, generate a one-sentence TLDR summary in {lang}:\n\n"
+        prompt = (
+            f"Given the following information of a paper, generate a detailed TLDR in {lang}.\n"
+            "Use 3-5 concise bullet points. Cover: the core problem, the main method, "
+            "the technical contribution, and why it is relevant to cryptography/FHE/PQC/lattice/public-key/commitment research. "
+            "If the abstract is weak or metadata-only, say what can be inferred and avoid overclaiming.\n\n"
+        )
         if self.title:
             prompt += f"Title:\n {self.title}\n\n"
 

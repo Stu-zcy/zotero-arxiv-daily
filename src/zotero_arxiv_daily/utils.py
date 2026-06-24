@@ -139,6 +139,32 @@ def glob_match(path:str, pattern:str) -> bool:
     re_pattern = glob.translate(pattern,recursive=True)
     return re.match(re_pattern, path) is not None
 
+def _short_month(value: str | None) -> str | None:
+    if not value:
+        return None
+    match = re.match(r"^(\d{4})-(\d{2})", str(value))
+    if not match:
+        return None
+    return f"{match.group(1)[2:]}/{match.group(2)}"
+
+def _email_subject(config: DictConfig) -> str:
+    runtime = config.get("runtime", {})
+    mode = runtime.get("mode") or "daily"
+    user = runtime.get("user") or "default"
+    now = datetime.datetime.now()
+    if mode == "daily":
+        label = f"每日文献（{now.month}月{now.day}日）"
+    else:
+        start = _short_month(runtime.get("start_date"))
+        end = _short_month(runtime.get("end_date"))
+        if start and end and start != end:
+            label = f"每月文献（{start}-{end}）"
+        elif end:
+            label = f"每月文献（{end}）"
+        else:
+            label = f"每月文献（{now.strftime('%y/%m')}）"
+    return f"{label} - {user}"
+
 def send_email(config:DictConfig, html:str):
     sender = config.email.sender
     receiver = config.email.receiver
@@ -154,10 +180,7 @@ def send_email(config:DictConfig, html:str):
     msg['To'] = _format_addr('You <%s>' % receiver)
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=sender.split("@")[-1])
-    today = datetime.datetime.now().strftime('%Y/%m/%d')
-    mode = config.get("runtime", {}).get("mode") or "daily"
-    user = config.get("runtime", {}).get("user") or "default"
-    msg['Subject'] = Header(f'Paper Digest [{user}/{mode}] {today}', 'utf-8').encode()
+    msg['Subject'] = Header(_email_subject(config), 'utf-8').encode()
 
     if int(smtp_port) == 465:
         server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=60)

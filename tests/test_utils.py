@@ -5,8 +5,9 @@ import tarfile
 import io
 
 import pytest
+from omegaconf import open_dict
 
-from zotero_arxiv_daily.utils import glob_match, send_email, extract_tex_code_from_tar, _bm25_pick
+from zotero_arxiv_daily.utils import glob_match, send_email, extract_tex_code_from_tar, _bm25_pick, _email_subject
 from tests.canned_responses import make_stub_smtp
 
 
@@ -131,6 +132,17 @@ def test_send_email_starttls_success(config, monkeypatch):
     assert recipients == ["test@example.com"]
     # Body is a full MIME message (base64-encoded). Check the raw MIME string.
     assert "text/html" in body
+
+
+def test_email_subject_uses_chinese_monthly_range(config):
+    with open_dict(config):
+        config.runtime = {
+            "user": "chenyang",
+            "mode": "test-range",
+            "start_date": "2025-01-01",
+            "end_date": "2026-02-28",
+        }
+    assert _email_subject(config) == "每月文献（25/01-26/02） - chenyang"
 
 
 def test_send_email_falls_back_to_ssl(config, monkeypatch):

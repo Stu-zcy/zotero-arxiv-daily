@@ -382,4 +382,8 @@ class CcfCrossrefRetriever(BaseRetriever):
             url=raw_paper.url,
             pdf_url=raw_paper.url,
             full_text=None,
+            published_date=raw_paper.publication_date or None,
+            venue=raw_paper.venue_name or (raw_paper.container_titles[0] if raw_paper.container_titles else None),
+            venue_abbr=raw_paper.venue_abbr or None,
+            source_label="Crossref",
         )

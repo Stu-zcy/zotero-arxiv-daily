@@ -231,6 +231,7 @@ class ArxivRetriever(BaseRetriever):
                 full_text = extract_text_from_html(raw_paper)
             if full_text is None:
                 full_text = extract_text_from_pdf(raw_paper)
+        published = getattr(raw_paper, "published", None)
         return Paper(
             source=self.name,
             title=title,
@@ -239,6 +240,10 @@ class ArxivRetriever(BaseRetriever):
             url=raw_paper.entry_id,
             pdf_url=pdf_url,
             full_text=full_text,
+            published_date=published.date().isoformat() if published else None,
+            venue=getattr(raw_paper, "primary_category", None),
+            venue_abbr=getattr(raw_paper, "primary_category", None),
+            source_label="arXiv",
         )
 
 

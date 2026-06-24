@@ -327,4 +327,8 @@ class CcfOpenAlexRetriever(BaseRetriever):
             url=raw_paper.url,
             pdf_url=raw_paper.pdf_url or raw_paper.url,
             full_text=None,
+            published_date=raw_paper.publication_date or None,
+            venue=raw_paper.venue_name or None,
+            venue_abbr=raw_paper.venue_abbr or None,
+            source_label="OpenAlex",
         )

@@ -1,8 +1,9 @@
 from loguru import logger
 from pyzotero import zotero
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from pathlib import Path
 import json
+import re
 from .utils import glob_match
 from .retriever import get_retriever_cls
 from .protocol import CorpusPaper
@@ -13,6 +14,31 @@ from .construct_email import render_email
 from .utils import send_email
 from openai import OpenAI
 from tqdm import tqdm
+
+
+def _as_plain_list(value):
+    if value is None:
+        return []
+    if OmegaConf.is_config(value):
+        return list(OmegaConf.to_container(value, resolve=True))
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
+def _normalize_topic_text(value: str) -> str:
+    value = value.lower().replace("&", " and ")
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _keyword_hit(keyword: str, searchable: str) -> bool:
+    keyword = _normalize_topic_text(keyword)
+    if not keyword:
+        return False
+    if len(keyword) <= 3:
+        return re.search(rf"\b{re.escape(keyword)}\b", searchable) is not None
+    return keyword in searchable
 
 
 def normalize_path_patterns(patterns: list[str] | ListConfig | None, config_key: str) -> list[str] | None:
@@ -105,6 +131,36 @@ class Executor:
             if key:
                 seen.add(key)
         self._save_seen(seen)
+
+    def _profile_topics(self) -> list[dict]:
+        for source in self.config.executor.source:
+            source_config = getattr(self.config.source, source, None)
+            if source_config is not None and source_config.get("topics"):
+                return [
+                    topic
+                    for topic in _as_plain_list(source_config.get("topics"))
+                    if isinstance(topic, dict) and topic.get("keywords")
+                ]
+        return []
+
+    def _annotate_and_sort(self, papers):
+        topics = self._profile_topics()
+        for paper in papers:
+            searchable = _normalize_topic_text(f"{paper.title} {paper.abstract} {paper.venue or ''} {paper.venue_abbr or ''}")
+            labels = []
+            for topic in topics:
+                name = str(topic.get("name") or "matched-topic")
+                keywords = [str(keyword) for keyword in _as_plain_list(topic.get("keywords")) if keyword]
+                if any(_keyword_hit(keyword, searchable) for keyword in keywords):
+                    labels.append(name)
+            paper.topic_labels = labels or ["other"]
+
+        def sort_key(paper):
+            published = paper.published_date or ""
+            return (paper.topic_labels[0] if paper.topic_labels else "other", -int(published.replace("-", "")[:8] or "0"), -(paper.score or 0))
+
+        return sorted(papers, key=sort_key)
+
     def fetch_zotero_corpus(self) -> list[CorpusPaper]:
         logger.info("Fetching zotero corpus")
         zot = zotero.Zotero(self.config.zotero.user_id, 'user', self.config.zotero.api_key)
@@ -183,6 +239,7 @@ class Executor:
             logger.info("Reranking papers...")
             reranked_papers = self.reranker.rerank(all_papers, corpus)
             reranked_papers = reranked_papers[:self.config.executor.max_paper_num]
+            reranked_papers = self._annotate_and_sort(reranked_papers)
             logger.info("Generating TLDR and affiliations...")
             for p in tqdm(reranked_papers):
                 p.generate_tldr(self.openai_client, self.config.llm)

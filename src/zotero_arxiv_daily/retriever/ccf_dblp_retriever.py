@@ -268,4 +268,8 @@ class CcfDblpRetriever(BaseRetriever):
             url=url,
             pdf_url=url,
             full_text=None,
+            published_date=str(raw_paper.year) if raw_paper.year else None,
+            venue=raw_paper.venue_name or None,
+            venue_abbr=raw_paper.venue_abbr or None,
+            source_label="DBLP",
         )

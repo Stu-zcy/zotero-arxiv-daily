@@ -1,5 +1,6 @@
 from .protocol import Paper
 import math
+import html
 
 
 framework = """
@@ -52,7 +53,14 @@ def get_empty_html():
   """
   return block_template
 
-def get_block_html(title:str, authors:str, rate:str, tldr:str, pdf_url:str, affiliations:str=None):
+def get_section_html(title: str) -> str:
+    return f"""
+    <div style="font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; color: #222; padding: 18px 0 8px 0;">
+        {html.escape(title)}
+    </div>
+    """
+
+def get_block_html(title:str, authors:str, rate:str, tldr:str, pdf_url:str, affiliations:str=None, metadata:str=None):
     block_template = """
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 8px; padding: 16px; background-color: #f9f9f9;">
     <tr>
@@ -65,6 +73,11 @@ def get_block_html(title:str, authors:str, rate:str, tldr:str, pdf_url:str, affi
             {authors}
             <br>
             <i>{affiliations}</i>
+        </td>
+    </tr>
+    <tr>
+        <td style="font-size: 14px; color: #333; padding: 8px 0;">
+            <strong>Metadata:</strong> {metadata}
         </td>
     </tr>
     <tr>
@@ -85,7 +98,15 @@ def get_block_html(title:str, authors:str, rate:str, tldr:str, pdf_url:str, affi
     </tr>
 </table>
 """
-    return block_template.format(title=title, authors=authors,rate=rate, tldr=tldr, pdf_url=pdf_url, affiliations=affiliations)
+    return block_template.format(
+        title=html.escape(title or ""),
+        authors=html.escape(authors or ""),
+        rate=html.escape(str(rate)),
+        tldr=html.escape(tldr or "").replace("\n", "<br>"),
+        pdf_url=html.escape(pdf_url or ""),
+        affiliations=html.escape(affiliations or ""),
+        metadata=html.escape(metadata or "Unknown"),
+    )
 
 def get_stars(score:float):
     full_star = '<span class="full-star">⭐</span>'
@@ -108,7 +129,8 @@ def render_email(papers:list[Paper]) -> str:
     parts = []
     if len(papers) == 0 :
         return framework.replace('__CONTENT__', get_empty_html())
-    
+
+    current_topic = None
     for p in papers:
         #rate = get_stars(p.score)
         rate = round(p.score, 1) if p.score is not None else 'Unknown'
@@ -125,7 +147,22 @@ def render_email(papers:list[Paper]) -> str:
                 affiliations += ', ...'
         else:
             affiliations = 'Unknown Affiliation'
-        parts.append(get_block_html(p.title, authors, rate, p.tldr, p.pdf_url, affiliations))
+        metadata_parts = []
+        if p.source_label or p.source:
+            metadata_parts.append(f"Source: {p.source_label or p.source}")
+        if p.published_date:
+            metadata_parts.append(f"Published: {p.published_date}")
+        venue = p.venue_abbr or p.venue
+        if venue:
+            metadata_parts.append(f"Venue: {venue}")
+        if p.topic_labels:
+            metadata_parts.append(f"Topics: {', '.join(p.topic_labels)}")
+        metadata = " | ".join(metadata_parts)
+        topic = p.topic_labels[0] if p.topic_labels else "other"
+        if topic != current_topic:
+            current_topic = topic
+            parts.append(get_section_html(topic))
+        parts.append(get_block_html(p.title, authors, rate, p.tldr, p.pdf_url, affiliations, metadata))
 
     content = '<br>' + '</br><br>'.join(parts) + '</br>'
     return framework.replace('__CONTENT__', content)

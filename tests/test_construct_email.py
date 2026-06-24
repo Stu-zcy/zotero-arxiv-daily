@@ -5,11 +5,25 @@ from tests.canned_responses import make_sample_paper
 
 
 def test_render_email_with_papers():
-    papers = [make_sample_paper(score=7.5, tldr="A great paper.", affiliations=["MIT"])]
+    papers = [
+        make_sample_paper(
+            score=7.5,
+            tldr="A great paper.",
+            affiliations=["MIT"],
+            source_label="arXiv",
+            published_date="2026-06-24",
+            venue_abbr="cs.CR",
+            topic_labels=["fhe"],
+        )
+    ]
     html = render_email(papers)
     assert "Sample Paper Title" in html
     assert "A great paper." in html
     assert "MIT" in html
+    assert "Source: arXiv" in html
+    assert "Published: 2026-06-24" in html
+    assert "Venue: cs.CR" in html
+    assert "Topics: fhe" in html
 
 
 def test_render_email_empty_list():
@@ -64,13 +78,14 @@ def test_get_stars_mid_score():
 
 
 def test_get_block_html_contains_all_fields():
-    html = get_block_html("Title", "Auth", "3.5", "Summary", "http://pdf.url", "MIT")
+    html = get_block_html("Title", "Auth", "3.5", "Summary", "http://pdf.url", "MIT", "Source: Crossref")
     assert "Title" in html
     assert "Auth" in html
     assert "3.5" in html
     assert "Summary" in html
     assert "http://pdf.url" in html
     assert "MIT" in html
+    assert "Source: Crossref" in html
 
 
 def test_get_empty_html():

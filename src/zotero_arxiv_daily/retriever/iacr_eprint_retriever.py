@@ -165,4 +165,8 @@ class IacrEprintRetriever(BaseRetriever):
             url=raw_paper.url,
             pdf_url=raw_paper.pdf_url,
             full_text=None,
+            published_date=raw_paper.published or None,
+            venue="IACR ePrint",
+            venue_abbr="ePrint",
+            source_label="IACR ePrint",
         )

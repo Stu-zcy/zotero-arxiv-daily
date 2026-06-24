@@ -33,7 +33,9 @@ class BaseRetriever(ABC):
                 continue
             if paper is not None:
                 papers.append(paper)
-            sleep(1)
+            convert_delay = float(self.retriever_config.get("convert_delay") or 0)
+            if convert_delay > 0:
+                sleep(convert_delay)
         return papers
 
 registered_retrievers = {}

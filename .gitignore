@@ -1,12 +1,16 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+.DS_Store
 build/
 dist/
 wheels/
 .vscode/
 *.egg-info
 .env
+users.local.yaml
+state/
+第七版中国计算机学会推荐国际学术会议和期刊目录（CCF 2026）.pdf
 
 # Virtual environments
 .venv

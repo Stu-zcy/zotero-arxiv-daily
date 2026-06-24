@@ -1,6 +1,8 @@
 from loguru import logger
 from pyzotero import zotero
 from omegaconf import DictConfig, ListConfig
+from pathlib import Path
+import json
 from .utils import glob_match
 from .retriever import get_retriever_cls
 from .protocol import CorpusPaper
@@ -39,6 +41,70 @@ class Executor:
         }
         self.reranker = get_reranker_cls(config.executor.reranker)(config)
         self.openai_client = OpenAI(api_key=config.llm.api.key, base_url=config.llm.api.base_url)
+
+    def _paper_key(self, paper) -> str:
+        url = (paper.url or paper.pdf_url or "").strip().lower()
+        if url:
+            return url
+        return paper.title.strip().lower()
+
+    def _seen_state_path(self) -> Path | None:
+        state_cfg = self.config.get("state")
+        if not state_cfg or not state_cfg.get("enabled") or state_cfg.get("ignore_seen"):
+            return None
+        path = Path(state_cfg.get("path") or "state/default/seen.json")
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        return path
+
+    def _load_seen(self) -> set[str]:
+        path = self._seen_state_path()
+        if path is None or not path.exists():
+            return set()
+        try:
+            with path.open(encoding="utf-8") as file:
+                payload = json.load(file)
+            if isinstance(payload, dict):
+                return set(str(key) for key in payload.get("papers", []))
+            if isinstance(payload, list):
+                return set(str(key) for key in payload)
+        except Exception as exc:
+            logger.warning(f"Failed to load seen state {path}: {exc}")
+        return set()
+
+    def _save_seen(self, seen: set[str]) -> None:
+        path = self._seen_state_path()
+        if path is None:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as file:
+            json.dump({"papers": sorted(seen)}, file, ensure_ascii=False, indent=2)
+
+    def _filter_seen(self, papers):
+        path = self._seen_state_path()
+        if path is None:
+            return papers, set()
+        seen = self._load_seen()
+        fresh = []
+        skipped = 0
+        for paper in papers:
+            key = self._paper_key(paper)
+            if key in seen:
+                skipped += 1
+                continue
+            fresh.append(paper)
+        if skipped:
+            logger.info(f"Skipped {skipped} papers already recorded in {path}")
+        return fresh, seen
+
+    def _mark_seen(self, papers, seen: set[str]) -> None:
+        if self._seen_state_path() is None:
+            return
+        for paper in papers:
+            key = self._paper_key(paper)
+            if key:
+                seen.add(key)
+        self._save_seen(seen)
     def fetch_zotero_corpus(self) -> list[CorpusPaper]:
         logger.info("Fetching zotero corpus")
         zot = zotero.Zotero(self.config.zotero.user_id, 'user', self.config.zotero.api_key)
@@ -99,13 +165,19 @@ class Executor:
         all_papers = []
         for source, retriever in self.retrievers.items():
             logger.info(f"Retrieving {source} papers...")
-            papers = retriever.retrieve_papers()
+            try:
+                papers = retriever.retrieve_papers()
+            except Exception as exc:
+                logger.warning(f"Retriever {source} failed; continuing with remaining sources: {exc}")
+                continue
             if len(papers) == 0:
                 logger.info(f"No {source} papers found")
                 continue
             logger.info(f"Retrieved {len(papers)} {source} papers")
             all_papers.extend(papers)
         logger.info(f"Total {len(all_papers)} papers retrieved from all sources")
+        all_papers, seen = self._filter_seen(all_papers)
+        logger.info(f"Total {len(all_papers)} papers after seen-state filtering")
         reranked_papers = []
         if len(all_papers) > 0:
             logger.info("Reranking papers...")
@@ -121,4 +193,5 @@ class Executor:
         logger.info("Sending email...")
         email_content = render_email(reranked_papers)
         send_email(self.config, email_content)
+        self._mark_seen(reranked_papers, seen)
         logger.info("Email sent successfully")

@@ -8,10 +8,86 @@ source:
   arxiv:
     category: null # The categories of target arxiv papers. Find the abbr of your research area from [here](https://arxiv.org/category_taxonomy). Example: ["cs.AI","cs.CV","cs.LG","cs.CL"]
     include_cross_list: false # Whether to include arXiv cross-list papers in subscribed categories. Example: true
+    max_batch_retries: 2
+    batch_retry_delay: 20
+    request_delay: 3
+    convert_delay: 0
   biorxiv:
     category: null # The categories of target biorxiv papers. Find categories from [here](https://www.biorxiv.org/). Example: ["biochemistry","animal behavior and cognition"]
   medrxiv:
     category: null # The categories of target medrxiv papers. Find categories from [here](https://www.medrxiv.org/) Example: ["psychiatry and clinical psychology", "neurology"]
+  ccf_dblp:
+    ccf_json_path: data/ccf2026_entries.json # JSON converted from the CCF 2026 PDF.
+    types: ["期刊","会议"] # CCF entry types to monitor. Example: ["期刊"].
+    fields: ["网络与信息安全","计算机科学理论"] # CCF fields relevant to FHE/PQC/cryptography.
+    ranks: ["A","B"] # CCF ranks to monitor.
+    start_date: null # Inclusive DBLP update start date, yyyy-mm-dd. If null, use lookback_days.
+    end_date: null # Inclusive DBLP update end date, yyyy-mm-dd. If null with start_date, use today.
+    lookback_days: 7 # Used only when start_date and end_date are both null.
+    keyword_required: true # If true, only keep titles/venues matching keywords before reranking.
+    keywords: ["fully homomorphic","homomorphic encryption","fhe","tfhe","ckks","bfv","bgv","bootstrapping","programmable bootstrapping","lattice","lattice-based","lwe","rlwe","lwr","sis","ntru","post-quantum","post quantum","pqc","kyber","dilithium","falcon","ml-kem","ml-dsa","kem","key encapsulation","public-key","public key","public-key encryption","commitment","polynomial commitment","vector commitment"]
+    max_venues: null # Limit venues for smoke tests.
+    max_papers: null # Limit papers for smoke tests.
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 1.0
+    proxy: null # Optional HTTP/SOCKS proxy URL for DBLP requests. Example: http://127.0.0.1:7890
+  ccf_openalex:
+    ccf_json_path: data/ccf2026_entries.json # JSON converted from the CCF 2026 PDF.
+    source_cache_path: outputs/ccf2026/openalex_sources_cache.json
+    types: ["期刊","会议"]
+    fields: ["网络与信息安全","计算机科学理论"]
+    ranks: ["A","B"]
+    start_date: null # Inclusive publication start date, yyyy-mm-dd. If null, use lookback_days.
+    end_date: null # Inclusive publication end date, yyyy-mm-dd. If null with start_date, use today.
+    lookback_days: 7
+    keyword_required: true # If true, only keep works matching keywords before reranking.
+    search_queries: ["homomorphic encryption","post quantum cryptography","lattice cryptography","lattice based cryptography","public key cryptography","commitment scheme"]
+    keywords: ["fully homomorphic","homomorphic encryption","fhe","tfhe","ckks","bfv","bgv","bootstrapping","programmable bootstrapping","lattice","lattice-based","lwe","rlwe","lwr","sis","ntru","post-quantum","post quantum","pqc","kyber","dilithium","falcon","ml-kem","ml-dsa","kem","key encapsulation","public-key","public key","public-key encryption","commitment","polynomial commitment","vector commitment"]
+    max_venues: null
+    max_papers: null
+    per_page: 25
+    mailto: null # Optional contact email for OpenAlex polite pool.
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 3.0
+    rate_limit_wait: 120.0
+    max_rate_limit_wait: 900.0
+    proxy: null # Optional HTTP/SOCKS proxy URL for OpenAlex requests.
+  ccf_crossref:
+    ccf_json_path: data/ccf2026_entries.json # JSON converted from the CCF 2026 PDF.
+    types: ["期刊","会议"]
+    fields: ["网络与信息安全","计算机科学理论"]
+    ranks: ["A","B"]
+    start_date: null # Inclusive publication start date, yyyy-mm-dd. If null, use lookback_days.
+    end_date: null # Inclusive publication end date, yyyy-mm-dd. If null with start_date, use today.
+    lookback_days: 7
+    keyword_required: true
+    query_mode: venue # venue: one Crossref request per CCF venue, then local keyword filtering. title: one request per search query.
+    search_queries: ["fully homomorphic encryption","FHE circuit construction","lattice cryptography","lattice based cryptography","public key cryptography","commitment scheme"]
+    keywords: ["fully homomorphic","homomorphic encryption","fhe","tfhe","ckks","bfv","bgv","bootstrapping","programmable bootstrapping","fhe circuit","lattice","lattice-based","lattice based","lwe","rlwe","lwr","sis","ntru","post-quantum","post quantum","pqc","kyber","dilithium","falcon","ml-kem","ml-dsa","kem","key encapsulation","public-key","public key","public-key encryption","commitment","polynomial commitment","vector commitment"]
+    max_venues: null
+    max_papers: null
+    rows: 100
+    mailto: null # Optional contact email for Crossref polite pool.
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 1.0
+    rate_limit_waits: [30, 60, 120]
+    proxy: null # Optional HTTP/SOCKS proxy URL for Crossref requests.
+  iacr_eprint:
+    feed_url: https://eprint.iacr.org/rss/rss.xml
+    categories: ["Public-key cryptography","Foundations","Implementation"]
+    lookback_days: 1
+    start_date: null
+    end_date: null
+    keyword_required: true
+    search_queries: ["fully homomorphic encryption","FHE circuit construction","lattice cryptography","lattice based cryptography","public key cryptography","commitment scheme"]
+    keywords: ["fully homomorphic","homomorphic encryption","fhe","tfhe","ckks","bfv","bgv","bootstrapping","programmable bootstrapping","fhe circuit","lattice","lattice-based","lattice based","lwe","rlwe","lwr","sis","ntru","post-quantum","post quantum","pqc","kyber","dilithium","falcon","ml-kem","ml-dsa","kem","key encapsulation","public-key","public key","public-key encryption","commitment","polynomial commitment","vector commitment"]
+    max_papers: null
+    request_timeout: 30
+    request_delay: 1.0
+    proxy: null
 
 email:
   sender: ??? # The email account of the SMTP server that sends you email. Example: abc@qq.com

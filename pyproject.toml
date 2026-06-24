@@ -28,6 +28,9 @@ dependencies = [
     "trafilatura>=2.0.0",
 ]
 
+[project.scripts]
+zotero-arxiv-daily = "zotero_arxiv_daily.main:main"
+
 [tool.uv.sources]
 torch = { index = "pytorch" }
 

@@ -6,7 +6,7 @@ import smtplib
 from collections import Counter
 from email.header import Header
 from email.mime.text import MIMEText
-from email.utils import parseaddr, formataddr
+from email.utils import parseaddr, formataddr, make_msgid, formatdate
 from loguru import logger
 import datetime
 from omegaconf import DictConfig
@@ -150,22 +150,32 @@ def send_email(config:DictConfig, html:str):
         return formataddr((Header(name, 'utf-8').encode(), addr))
 
     msg = MIMEText(html, 'html', 'utf-8')
-    msg['From'] = _format_addr('Github Action <%s>' % sender)
+    msg['From'] = _format_addr('Zotero Paper Bot <%s>' % sender)
     msg['To'] = _format_addr('You <%s>' % receiver)
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=sender.split("@")[-1])
     today = datetime.datetime.now().strftime('%Y/%m/%d')
-    msg['Subject'] = Header(f'Daily arXiv {today}', 'utf-8').encode()
+    mode = config.get("runtime", {}).get("mode") or "daily"
+    user = config.get("runtime", {}).get("user") or "default"
+    msg['Subject'] = Header(f'Paper Digest [{user}/{mode}] {today}', 'utf-8').encode()
 
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-    except Exception as e:
-        logger.debug(f"Failed to use TLS. {e}\nTry to use SSL.")
+    if int(smtp_port) == 465:
+        server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=60)
+    else:
         try:
-            server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=60)
+            server.starttls()
         except Exception as e:
-            logger.debug(f"Failed to use SSL. {e}\nTry to use plain text.")
-            server = smtplib.SMTP(smtp_server, smtp_port)
+            logger.debug(f"Failed to use TLS. {e}\nTry to use SSL.")
+            try:
+                server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=60)
+            except Exception as ssl_exc:
+                logger.debug(f"Failed to use SSL. {ssl_exc}\nTry to use plain text.")
+                server = smtplib.SMTP(smtp_server, smtp_port, timeout=60)
 
     server.login(sender, password)
-    server.sendmail(sender, [receiver], msg.as_string())
+    refused = server.sendmail(sender, [receiver], msg.as_string())
     server.quit()
+    if refused:
+        raise RuntimeError(f"SMTP refused recipients: {refused}")
+    logger.info(f"SMTP accepted message for {receiver}")

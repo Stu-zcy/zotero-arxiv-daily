@@ -1,6 +1,7 @@
 """Tests for zotero_arxiv_daily.protocol: Paper.generate_tldr, Paper.generate_affiliations."""
 
 import pytest
+from omegaconf import OmegaConf
 
 from tests.canned_responses import make_sample_paper, make_stub_openai_client
 
@@ -53,6 +54,22 @@ def test_tldr_truncates_long_prompt(llm_params):
     paper = make_sample_paper(full_text="word " * 10000)
     result = paper.generate_tldr(client, llm_params)
     assert result is not None
+
+
+def test_tldr_accepts_omegaconf_generation_kwargs():
+    client = make_stub_openai_client()
+    paper = make_sample_paper()
+    llm_params = OmegaConf.create(
+        {
+            "language": "Chinese",
+            "generation_kwargs": {
+                "model": "deepseek-v4-pro",
+                "extra_body": {"thinking": {"type": "enabled"}},
+            },
+        }
+    )
+    result = paper.generate_tldr(client, llm_params)
+    assert result == "Hello! How can I assist you today?"
 
 
 # ---------------------------------------------------------------------------

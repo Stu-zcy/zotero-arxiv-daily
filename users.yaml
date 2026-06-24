@@ -1,0 +1,124 @@
+users:
+  chenyang:
+    zotero:
+      user_id: ${oc.env:ZOTERO_ID,null}
+      api_key: ${oc.env:ZOTERO_KEY,null}
+      include_path:
+        - "我的文库/同态加密/**"
+        - "我的文库/后量子PQC/**"
+        - "我的文库/承诺/**"
+        - "我的文库/安全协议/**"
+        - "我的文库/公钥研究/**"
+        - "我的文库/属性加密/**"
+        - "我的文库/机密运算（可信计算）/**"
+      ignore_path:
+        - "我的文库/流量分析/**"
+    email:
+      receiver: ${oc.env:RECEIVER,null}
+    profile:
+      search_queries:
+        - fully homomorphic encryption
+        - post quantum cryptography
+        - lattice cryptography
+        - lattice based cryptography
+        - public key cryptography
+        - commitment scheme
+      keywords:
+        - fully homomorphic
+        - homomorphic encryption
+        - fhe
+        - tfhe
+        - ckks
+        - bfv
+        - bgv
+        - bootstrapping
+        - programmable bootstrapping
+        - lattice
+        - lattice-based
+        - lattice based
+        - lwe
+        - rlwe
+        - lwr
+        - sis
+        - ntru
+        - post-quantum
+        - post quantum
+        - pqc
+        - kyber
+        - dilithium
+        - falcon
+        - ml-kem
+        - ml-dsa
+        - public-key
+        - public key
+        - public-key encryption
+        - kem
+        - key encapsulation
+        - commitment
+        - polynomial commitment
+        - vector commitment
+    monthly:
+      ccf_fields:
+        - 网络与信息安全
+        - 计算机科学理论
+      ccf_ranks:
+        - A
+        - B
+  liruoyi:
+    zotero:
+      user_id: ${oc.env:LIRUOYI_ZOTERO_ID,null}
+      api_key: ${oc.env:LIRUOYI_ZOTERO_KEY,null}
+      include_path: null
+      ignore_path: null
+    email:
+      receiver: lxrkya@gmail.com
+    profile:
+      search_queries:
+        - fully homomorphic encryption
+        - FHE circuit construction
+        - lattice cryptography
+        - lattice based cryptography
+        - public key cryptography
+        - commitment scheme
+      keywords:
+        - fully homomorphic
+        - homomorphic encryption
+        - fhe
+        - tfhe
+        - ckks
+        - bfv
+        - bgv
+        - bootstrapping
+        - programmable bootstrapping
+        - fhe circuit
+        - lattice
+        - lattice-based
+        - lattice based
+        - lwe
+        - rlwe
+        - lwr
+        - sis
+        - ntru
+        - post-quantum
+        - post quantum
+        - pqc
+        - kyber
+        - dilithium
+        - falcon
+        - ml-kem
+        - ml-dsa
+        - public-key
+        - public key
+        - public-key encryption
+        - kem
+        - key encapsulation
+        - commitment
+        - polynomial commitment
+        - vector commitment
+    monthly:
+      ccf_fields:
+        - 网络与信息安全
+        - 计算机科学理论
+      ccf_ranks:
+        - A
+        - B

@@ -1,7 +1,16 @@
 zotero:
   user_id: ${oc.env:ZOTERO_ID}
   api_key: ${oc.env:ZOTERO_KEY}
-  include_path: null # Or set a list of glob patterns, e.g. ["2026/survey/**","2026/reading-group/**"]
+  include_path:
+    - "我的文库/同态加密/**"
+    - "我的文库/后量子PQC/**"
+    - "我的文库/承诺/**"
+    - "我的文库/安全协议/**"
+    - "我的文库/公钥研究/**"
+    - "我的文库/属性加密/**"
+    - "我的文库/机密运算（可信计算）/**"
+  ignore_path:
+    - "我的文库/流量分析/**"
 
 email:
   sender: ${oc.env:SENDER}
@@ -15,12 +24,90 @@ llm:
     key: ${oc.env:OPENAI_API_KEY}
     base_url: ${oc.env:OPENAI_API_BASE}
   generation_kwargs:
-    model: gpt-4o-mini
+    model: deepseek-v4-pro
+    reasoning_effort: high
+    extra_body:
+      thinking:
+        type: enabled
+  language: Chinese
 
 source:
   arxiv:
-    category: ["cs.AI","cs.CV","cs.LG","cs.CL"]
+    category: ["cs.CR","cs.DS","cs.IT"]
+    include_cross_list: true
+    max_batch_retries: 2
+    batch_retry_delay: 20
+    request_delay: 3
+    convert_delay: 0
+  ccf_dblp:
+    ccf_json_path: data/ccf2026_entries.json
+    types: ["期刊","会议"]
+    fields: ["网络与信息安全","计算机科学理论"]
+    ranks: ["A","B"]
+    start_date: ${oc.env:CCF_START_DATE,null}
+    end_date: ${oc.env:CCF_END_DATE,null}
+    lookback_days: 7
+    keyword_required: true
+    max_venues: null
+    max_papers: null
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 1.0
+    proxy: ${oc.env:CCF_DBLP_PROXY,null}
+  ccf_openalex:
+    ccf_json_path: data/ccf2026_entries.json
+    source_cache_path: outputs/ccf2026/openalex_sources_cache.json
+    types: ["期刊","会议"]
+    fields: ["网络与信息安全","计算机科学理论"]
+    ranks: ["A","B"]
+    start_date: ${oc.env:CCF_START_DATE,null}
+    end_date: ${oc.env:CCF_END_DATE,null}
+    lookback_days: 7
+    keyword_required: true
+    max_venues: null
+    max_papers: null
+    per_page: 25
+    mailto: ${oc.env:OPENALEX_MAILTO,null}
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 3.0
+    rate_limit_wait: 120.0
+    max_rate_limit_wait: 900.0
+    proxy: ${oc.env:CCF_OPENALEX_PROXY,null}
+  ccf_crossref:
+    ccf_json_path: data/ccf2026_entries.json
+    types: ["期刊","会议"]
+    fields: ["网络与信息安全","计算机科学理论"]
+    ranks: ["A","B"]
+    start_date: ${oc.env:CCF_START_DATE,null}
+    end_date: ${oc.env:CCF_END_DATE,null}
+    lookback_days: 7
+    keyword_required: true
+    query_mode: venue
+    max_venues: null
+    max_papers: null
+    rows: 100
+    mailto: ${oc.env:CROSSREF_MAILTO,null}
+    request_timeout: 30
+    request_retries: 3
+    request_delay: 1.0
+    rate_limit_waits: [30, 60, 120]
+    proxy: ${oc.env:CCF_CROSSREF_PROXY,null}
+  iacr_eprint:
+    feed_url: https://eprint.iacr.org/rss/rss.xml
+    categories: ["Public-key cryptography","Foundations","Implementation"]
+    lookback_days: 1
+    start_date: ${oc.env:IACR_START_DATE,null}
+    end_date: ${oc.env:IACR_END_DATE,null}
+    keyword_required: true
+    max_papers: null
+    request_timeout: 30
+    request_delay: 1.0
+    proxy: ${oc.env:IACR_PROXY,null}
 
 executor:
   debug: ${oc.env:DEBUG,null}
-  source: ['arxiv']
+  source: ['arxiv','ccf_openalex']
+  reranker: local
+  max_paper_num: 20
+  send_empty: false

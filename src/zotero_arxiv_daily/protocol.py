@@ -6,7 +6,14 @@ import tiktoken
 from openai import OpenAI
 from loguru import logger
 import json
+from omegaconf import OmegaConf
 RawPaperItem = TypeVar('RawPaperItem')
+
+
+def _plain_container(value):
+    if OmegaConf.is_config(value):
+        return OmegaConf.to_container(value, resolve=True)
+    return value
 
 @dataclass
 class Paper:
@@ -43,6 +50,7 @@ class Paper:
         prompt_tokens = prompt_tokens[:4000]  # truncate to 4000 tokens
         prompt = enc.decode(prompt_tokens)
         
+        generation_kwargs = _plain_container(llm_params.get('generation_kwargs', {}))
         response = openai_client.chat.completions.create(
             messages=[
                 {
@@ -51,7 +59,7 @@ class Paper:
                 },
                 {"role": "user", "content": prompt},
             ],
-            **llm_params.get('generation_kwargs', {})
+            **generation_kwargs
         )
         tldr = response.choices[0].message.content
         return tldr
@@ -75,6 +83,7 @@ class Paper:
             prompt_tokens = enc.encode(prompt)
             prompt_tokens = prompt_tokens[:2000]  # truncate to 2000 tokens
             prompt = enc.decode(prompt_tokens)
+            generation_kwargs = _plain_container(llm_params.get('generation_kwargs', {}))
             affiliations = openai_client.chat.completions.create(
                 messages=[
                     {
@@ -83,7 +92,7 @@ class Paper:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                **llm_params.get('generation_kwargs', {})
+                **generation_kwargs
             )
             affiliations = affiliations.choices[0].message.content
 

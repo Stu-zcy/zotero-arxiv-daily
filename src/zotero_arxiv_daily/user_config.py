@@ -153,7 +153,9 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             config.source.arxiv.category = ["cs.CR"]
             config.source.arxiv.include_cross_list = False
             config.source.arxiv.extract_full_text = False
+            config.source.arxiv.keyword_required = False
             config.source.iacr_eprint.lookback_days = 1
+            config.source.iacr_eprint.categories = []
             if args.send_email is not None:
                 config.executor.send_empty = bool(args.send_email)
         elif mode in {"monthly", "test-range"}:

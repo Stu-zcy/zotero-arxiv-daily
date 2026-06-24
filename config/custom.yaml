@@ -36,7 +36,7 @@ source:
     category: ["cs.CR"]
     include_cross_list: false
     extract_full_text: false
-    keyword_required: true
+    keyword_required: false
     min_topic_score: 2
     topics: []
     max_batch_retries: 2
@@ -103,7 +103,7 @@ source:
     proxy: ${oc.env:CCF_CROSSREF_PROXY,null}
   iacr_eprint:
     feed_url: https://eprint.iacr.org/rss/rss.xml
-    categories: ["Public-key cryptography","Foundations","Implementation"]
+    categories: []
     lookback_days: 1
     start_date: ${oc.env:IACR_START_DATE,null}
     end_date: ${oc.env:IACR_END_DATE,null}

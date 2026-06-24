@@ -66,5 +66,7 @@ users:
     assert list(updated.executor.source) == ["arxiv", "iacr_eprint"]
     assert list(updated.source.arxiv.category) == ["cs.CR"]
     assert updated.source.arxiv.include_cross_list is False
+    assert updated.source.arxiv.keyword_required is False
+    assert list(updated.source.iacr_eprint.categories) == []
     assert updated.state.enabled is True
     assert updated.state.ignore_seen is False

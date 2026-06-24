@@ -1,6 +1,6 @@
 from omegaconf import open_dict
 
-from zotero_arxiv_daily.retriever.iacr_eprint_retriever import IacrEprintRetriever
+from zotero_arxiv_daily.retriever.iacr_eprint_retriever import IacrEprintRetriever, _keyword_in_text, _normalize_text
 
 
 RSS = """<?xml version="1.0"?>
@@ -60,3 +60,10 @@ def test_iacr_eprint_retriever_filters_feed(config, monkeypatch):
     assert papers[0].title == "[ePrint] Lattice Foundations for Fully Homomorphic Encryption"
     assert papers[0].authors == ["Alice", "Bob"]
     assert papers[0].pdf_url == "https://eprint.iacr.org/2026/123.pdf"
+
+
+def test_iacr_keyword_matching_avoids_substring_false_positives():
+    searchable = _normalize_text("Physics-Aware Temporal Feature Engineering for Eavesdropping Detection")
+    assert not _keyword_in_text("sis", searchable)
+    assert not _keyword_in_text("fhe", searchable)
+    assert _keyword_in_text("physics", searchable)

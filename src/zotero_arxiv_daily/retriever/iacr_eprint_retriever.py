@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
+import re
 
 import feedparser
 import requests
@@ -89,6 +90,19 @@ def _entry_pdf(entry) -> str | None:
     return None
 
 
+def _normalize_text(value: str) -> str:
+    value = value.lower().replace("&", " and ")
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _keyword_in_text(keyword: str, searchable: str) -> bool:
+    normalized_keyword = _normalize_text(keyword)
+    if not normalized_keyword:
+        return False
+    return re.search(rf"\b{re.escape(normalized_keyword)}\b", searchable) is not None
+
+
 @register_retriever("iacr_eprint")
 class IacrEprintRetriever(BaseRetriever):
     def __init__(self, config):
@@ -116,20 +130,29 @@ class IacrEprintRetriever(BaseRetriever):
         max_papers = self.retriever_config.get("max_papers")
         papers: list[EprintPaper] = []
         seen: set[str] = set()
+        stats = {
+            "feed": len(parsed.entries),
+            "date": 0,
+            "category": 0,
+            "keyword": 0,
+        }
 
         for entry in parsed.entries:
             published_date = _entry_date(entry)
             if published_date and not (self.start_date <= published_date <= self.end_date):
                 continue
+            stats["date"] += 1
             category_values = [tag.get("term") for tag in entry.get("tags") or [] if tag.get("term")]
             category = category_values[0] if category_values else ""
             if categories and category.lower() not in categories:
                 continue
+            stats["category"] += 1
             title = str(entry.get("title") or "").strip()
             abstract = str(entry.get("summary") or entry.get("description") or "").strip()
-            searchable = f"{title} {abstract} {category}".lower()
-            if keyword_required and not any(keyword in searchable for keyword in keywords):
+            searchable = _normalize_text(f"{title} {abstract} {category}")
+            if keyword_required and not any(_keyword_in_text(keyword, searchable) for keyword in keywords):
                 continue
+            stats["keyword"] += 1
             url = str(entry.get("link") or entry.get("id") or "")
             key = url or title.lower()
             if not key or key in seen:
@@ -152,7 +175,16 @@ class IacrEprintRetriever(BaseRetriever):
         delay = float(self.retriever_config.get("request_delay") or 0)
         if delay > 0:
             time.sleep(delay)
-        logger.info(f"IACR ePrint matched {len(papers)} papers for {self.start_date} to {self.end_date}")
+        logger.info(
+            "IACR ePrint feed={} date_matched={} category_matched={} keyword_matched={} kept={} for {} to {}",
+            stats["feed"],
+            stats["date"],
+            stats["category"],
+            stats["keyword"],
+            len(papers),
+            self.start_date,
+            self.end_date,
+        )
         return papers
 
     def convert_to_paper(self, raw_paper: EprintPaper) -> Paper:

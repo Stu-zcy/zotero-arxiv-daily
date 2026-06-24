@@ -73,6 +73,13 @@ def _strip_markup(value: str | None) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def _keyword_in_text(keyword: str, searchable: str) -> bool:
+    normalized_keyword = _normalize_text(keyword)
+    if not normalized_keyword:
+        return False
+    return re.search(rf"\b{re.escape(normalized_keyword)}\b", searchable) is not None
+
+
 def _title_from_item(item: dict[str, Any]) -> str:
     titles = item.get("title") or []
     return str(titles[0]) if titles else ""
@@ -123,6 +130,18 @@ def _venue_matches(item: dict[str, Any], venue: dict[str, str]) -> bool:
             if normalized_container == target:
                 return True
     return False
+
+
+def _topic_matches(searchable: str, topics: list[dict[str, Any]], min_score: int) -> tuple[bool, list[str]]:
+    matched_topics = []
+    for topic in topics:
+        if not isinstance(topic, dict):
+            continue
+        keywords = [str(k).lower() for k in _as_list(topic.get("keywords")) if k]
+        hits = {keyword for keyword in keywords if _keyword_in_text(keyword, searchable)}
+        if len(hits) >= min_score:
+            matched_topics.append(str(topic.get("name") or "topic"))
+    return bool(matched_topics), matched_topics
 
 
 @register_retriever("ccf_crossref")
@@ -223,11 +242,35 @@ class CcfCrossrefRetriever(BaseRetriever):
         data = self._get_json(session, params)
         return data.get("message", {}).get("items") or []
 
+    def _query_bibliographic(self, session: requests.Session, search_term: str) -> list[dict[str, Any]]:
+        filters = [
+            f"from-pub-date:{self.start_date.isoformat()}",
+            f"until-pub-date:{self.end_date.isoformat()}",
+        ]
+        params: dict[str, Any] = {
+            "query.bibliographic": search_term,
+            "filter": ",".join(filters),
+            "rows": int(self.retriever_config.get("supplemental_rows") or 50),
+            "sort": "relevance",
+            "order": "desc",
+        }
+        mailto = self.retriever_config.get("mailto")
+        if mailto:
+            params["mailto"] = mailto
+        data = self._get_json(session, params)
+        return data.get("message", {}).get("items") or []
+
     def _retrieve_raw_papers(self) -> list[CrossrefPaper]:
         venues = self._load_venues()
         session = self._session()
         delay = float(self.retriever_config.get("request_delay") or 1.0)
         keywords = [str(k).lower() for k in _as_list(self.retriever_config.get("keywords")) if k]
+        topics = [
+            topic
+            for topic in _as_list(self.retriever_config.get("topics"))
+            if isinstance(topic, dict) and topic.get("keywords")
+        ]
+        min_topic_score = int(self.retriever_config.get("min_topic_score") or 2)
         search_queries = [str(k) for k in _as_list(self.retriever_config.get("search_queries")) if k]
         keyword_required = bool(self.retriever_config.get("keyword_required") or False)
         max_papers = self.retriever_config.get("max_papers")
@@ -236,6 +279,43 @@ class CcfCrossrefRetriever(BaseRetriever):
         raw_count = 0
         container_count = 0
         last_progress_bucket = 0
+
+        def append_item(item: dict[str, Any], venue: dict[str, str]) -> bool:
+            nonlocal container_count
+            if not _venue_matches(item, venue):
+                return False
+            container_count += 1
+            title = _title_from_item(item)
+            abstract = _strip_markup(item.get("abstract"))
+            searchable = _normalize_text(f"{title} {abstract} {' '.join(item.get('container-title') or [])}")
+            if keyword_required and topics:
+                matched, matched_topics = _topic_matches(searchable, topics, min_topic_score)
+                if not matched:
+                    return False
+            elif keyword_required and not any(_keyword_in_text(keyword, searchable) for keyword in keywords):
+                return False
+            doi = (item.get("DOI") or "").lower()
+            key = doi or _normalize_text(title)
+            if not key or key in seen:
+                return False
+            seen.add(key)
+            papers.append(
+                CrossrefPaper(
+                    ccf_type=venue.get("类型", ""),
+                    ccf_field=venue.get("领域", ""),
+                    ccf_rank=venue.get("等级", ""),
+                    venue_abbr=venue.get("简称", ""),
+                    venue_name=venue.get("全称", ""),
+                    title=title,
+                    authors=_author_names(item),
+                    publication_date=_date_from_parts(item.get("published-print") or item.get("published-online") or item.get("published")),
+                    doi=item.get("DOI") or "",
+                    url=item.get("URL") or (f"https://doi.org/{item.get('DOI')}" if item.get("DOI") else ""),
+                    abstract=abstract,
+                    container_titles=[str(t) for t in item.get("container-title") or []],
+                )
+            )
+            return True
 
         for venue in venues:
             query_mode = str(self.retriever_config.get("query_mode") or "venue")
@@ -248,35 +328,7 @@ class CcfCrossrefRetriever(BaseRetriever):
                     continue
                 raw_count += len(items)
                 for item in items:
-                    if not _venue_matches(item, venue):
-                        continue
-                    container_count += 1
-                    title = _title_from_item(item)
-                    abstract = _strip_markup(item.get("abstract"))
-                    searchable = f"{title} {abstract} {' '.join(item.get('container-title') or [])}".lower()
-                    if keyword_required and not any(keyword in searchable for keyword in keywords):
-                        continue
-                    doi = (item.get("DOI") or "").lower()
-                    key = doi or _normalize_text(title)
-                    if not key or key in seen:
-                        continue
-                    seen.add(key)
-                    papers.append(
-                        CrossrefPaper(
-                            ccf_type=venue.get("类型", ""),
-                            ccf_field=venue.get("领域", ""),
-                            ccf_rank=venue.get("等级", ""),
-                            venue_abbr=venue.get("简称", ""),
-                            venue_name=venue.get("全称", ""),
-                            title=title,
-                            authors=_author_names(item),
-                            publication_date=_date_from_parts(item.get("published-print") or item.get("published-online") or item.get("published")),
-                            doi=item.get("DOI") or "",
-                            url=item.get("URL") or (f"https://doi.org/{item.get('DOI')}" if item.get("DOI") else ""),
-                            abstract=abstract,
-                            container_titles=[str(t) for t in item.get("container-title") or []],
-                        )
-                    )
+                    append_item(item, venue)
                     if max_papers and len(papers) >= int(max_papers):
                         logger.info(
                             f"Crossref raw={raw_count}, container_matched={container_count}, keyword_matched={len(papers)}"
@@ -289,6 +341,28 @@ class CcfCrossrefRetriever(BaseRetriever):
             if progress_bucket > last_progress_bucket:
                 last_progress_bucket = progress_bucket
                 logger.info(f"Crossref progress: matched {len(papers)} papers so far")
+
+        if self.retriever_config.get("supplemental_bibliographic_search") and search_queries:
+            logger.info(f"Running {len(search_queries)} supplemental Crossref bibliographic searches")
+            for search_term in search_queries:
+                try:
+                    items = self._query_bibliographic(session, search_term)
+                except Exception as exc:
+                    logger.warning(f"Failed supplemental Crossref query {search_term}: {exc}")
+                    continue
+                raw_count += len(items)
+                for item in items:
+                    for venue in venues:
+                        if append_item(item, venue):
+                            break
+                    if max_papers and len(papers) >= int(max_papers):
+                        logger.info(
+                            f"Crossref raw={raw_count}, container_matched={container_count}, keyword_matched={len(papers)}"
+                        )
+                        logger.info(f"Reached ccf_crossref.max_papers={max_papers}")
+                        return papers
+                if delay > 0:
+                    time.sleep(delay)
 
         logger.info(f"Crossref raw={raw_count}, container_matched={container_count}, keyword_matched={len(papers)}")
         return papers

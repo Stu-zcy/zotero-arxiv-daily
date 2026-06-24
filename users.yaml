@@ -16,9 +16,87 @@ users:
     email:
       receiver: ${oc.env:RECEIVER,null}
     profile:
+      monthly_fields:
+        - 网络与信息安全
+        - 计算机科学理论
+        - 计算机体系结构/并行与分布计算/存储系统
+      min_topic_score: 2
+      topics:
+        - name: fhe
+          keywords:
+            - fully homomorphic
+            - homomorphic encryption
+            - fhe
+            - tfhe
+            - ckks
+            - bfv
+            - bgv
+            - bootstrapping
+            - programmable bootstrapping
+        - name: pqc
+          keywords:
+            - post-quantum
+            - post quantum
+            - pqc
+            - hash-based
+            - hash based
+            - sphincs
+            - xmss
+            - lms
+            - kyber
+            - dilithium
+            - falcon
+            - ml-kem
+            - ml-dsa
+            - nist post-quantum
+            - gpu
+            - fpga
+            - accelerator
+            - parallel architecture
+        - name: lattice
+          keywords:
+            - lattice
+            - lattice-based
+            - lattice based
+            - lwe
+            - rlwe
+            - lwr
+            - sis
+            - ntru
+            - module-lwe
+            - module lwe
+        - name: public-key
+          keywords:
+            - public-key
+            - public key
+            - public-key encryption
+            - kem
+            - key encapsulation
+        - name: commitments
+          keywords:
+            - commitment
+            - polynomial commitment
+            - vector commitment
+        - name: attribute-encryption
+          keywords:
+            - attribute-based encryption
+            - attribute based encryption
+            - abe
+            - ciphertext-policy
+            - cp-abe
+        - name: confidential-computing
+          keywords:
+            - confidential computing
+            - trusted execution
+            - tee
+            - sgx
+            - trusted computing
       search_queries:
         - fully homomorphic encryption
         - post quantum cryptography
+        - hash-based PQC
+        - PQC GPU
+        - post-quantum GPU acceleration
         - lattice cryptography
         - lattice based cryptography
         - public key cryptography
@@ -61,6 +139,7 @@ users:
       ccf_fields:
         - 网络与信息安全
         - 计算机科学理论
+        - 计算机体系结构/并行与分布计算/存储系统
       ccf_ranks:
         - A
         - B
@@ -73,6 +152,50 @@ users:
     email:
       receiver: lxrkya@gmail.com
     profile:
+      monthly_fields:
+        - 网络与信息安全
+        - 计算机科学理论
+        - 计算机体系结构/并行与分布计算/存储系统
+      min_topic_score: 2
+      topics:
+        - name: fhe
+          keywords:
+            - fully homomorphic
+            - homomorphic encryption
+            - fhe
+            - tfhe
+            - ckks
+            - bfv
+            - bgv
+            - bootstrapping
+            - programmable bootstrapping
+            - fhe circuit
+            - circuit construction
+        - name: lattice-foundations
+          keywords:
+            - lattice
+            - lattice-based
+            - lattice based
+            - ideal lattice
+            - module lattice
+            - lwe
+            - rlwe
+            - lwr
+            - sis
+            - ntru
+            - module-lwe
+            - module lwe
+            - trapdoor
+            - gaussian sampling
+        - name: fhe-implementation
+          keywords:
+            - homomorphic computation
+            - homomorphic evaluation
+            - bootstrapping
+            - ciphertext packing
+            - fhe accelerator
+            - fhe hardware
+            - fhe circuit
       search_queries:
         - fully homomorphic encryption
         - FHE circuit construction
@@ -119,6 +242,7 @@ users:
       ccf_fields:
         - 网络与信息安全
         - 计算机科学理论
+        - 计算机体系结构/并行与分布计算/存储系统
       ccf_ranks:
         - A
         - B

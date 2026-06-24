@@ -83,10 +83,14 @@ source:
     end_date: ${oc.env:CCF_END_DATE,null}
     lookback_days: 7
     keyword_required: true
+    min_topic_score: 2
+    topics: []
     query_mode: venue
+    supplemental_bibliographic_search: true
     max_venues: null
     max_papers: null
-    rows: 100
+    rows: 500
+    supplemental_rows: 50
     mailto: ${oc.env:CROSSREF_MAILTO,null}
     request_timeout: 30
     request_retries: 3

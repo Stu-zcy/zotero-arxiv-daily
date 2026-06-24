@@ -2,7 +2,7 @@ import json
 
 from omegaconf import open_dict
 
-from zotero_arxiv_daily.retriever.ccf_crossref_retriever import CcfCrossrefRetriever, _venue_matches
+from zotero_arxiv_daily.retriever.ccf_crossref_retriever import CcfCrossrefRetriever, _keyword_in_text, _topic_matches, _venue_matches
 
 
 def test_crossref_venue_matches_container_title():
@@ -10,6 +10,35 @@ def test_crossref_venue_matches_container_title():
     assert _venue_matches({"container-title": ["Journal of Cryptology"]}, venue)
     assert _venue_matches({"short-container-title": ["JoC"]}, venue)
     assert not _venue_matches({"container-title": ["Lecture Notes in Computer Science"]}, venue)
+
+
+def test_topic_matches_distinguish_user_profiles():
+    grasp = "GRASP: Accelerating Hash-Based PQC Performance on GPU Parallel Architecture".lower()
+    chenyang_topics = [
+        {
+            "name": "pqc",
+            "keywords": ["pqc", "hash-based", "gpu", "parallel architecture"],
+        }
+    ]
+    liruoyi_topics = [
+        {
+            "name": "fhe",
+            "keywords": ["fully homomorphic", "homomorphic encryption", "fhe", "bootstrapping"],
+        },
+        {
+            "name": "lattice-foundations",
+            "keywords": ["lattice", "lwe", "rlwe", "sis"],
+        },
+    ]
+    assert _topic_matches(grasp, chenyang_topics, min_score=2) == (True, ["pqc"])
+    assert _topic_matches(grasp, liruoyi_topics, min_score=2) == (False, [])
+
+
+def test_short_keywords_require_word_boundaries():
+    searchable = "performance prediction of concurrent dnn training tasks in gpu spatial sharing environments"
+    assert not _keyword_in_text("sis", searchable)
+    assert _keyword_in_text("gpu", searchable)
+    assert _keyword_in_text("spatial sharing", searchable)
 
 
 def test_ccf_crossref_retriever_filters_dates_container_keywords_and_doi(config, tmp_path, monkeypatch):

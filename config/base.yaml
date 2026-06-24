@@ -63,12 +63,16 @@ source:
     end_date: null # Inclusive publication end date, yyyy-mm-dd. If null with start_date, use today.
     lookback_days: 7
     keyword_required: true
+    min_topic_score: 2
+    topics: []
     query_mode: venue # venue: one Crossref request per CCF venue, then local keyword filtering. title: one request per search query.
+    supplemental_bibliographic_search: true # Add broader Crossref bibliographic searches, then locally validate CCF venue and topic.
     search_queries: ["fully homomorphic encryption","FHE circuit construction","lattice cryptography","lattice based cryptography","public key cryptography","commitment scheme"]
     keywords: ["fully homomorphic","homomorphic encryption","fhe","tfhe","ckks","bfv","bgv","bootstrapping","programmable bootstrapping","fhe circuit","lattice","lattice-based","lattice based","lwe","rlwe","lwr","sis","ntru","post-quantum","post quantum","pqc","kyber","dilithium","falcon","ml-kem","ml-dsa","kem","key encapsulation","public-key","public key","public-key encryption","commitment","polynomial commitment","vector commitment"]
     max_venues: null
     max_papers: null
-    rows: 100
+    rows: 500
+    supplemental_rows: 50
     mailto: null # Optional contact email for Crossref polite pool.
     request_timeout: 30
     request_retries: 3

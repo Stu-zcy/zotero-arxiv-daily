@@ -70,6 +70,8 @@ def _apply_profile(config: DictConfig, user_cfg: DictConfig) -> None:
     profile = user_cfg.get("profile") or {}
     keywords = _as_plain_list(profile.get("keywords"))
     search_queries = _as_plain_list(profile.get("search_queries"))
+    topics = _as_plain_list(profile.get("topics"))
+    min_topic_score = profile.get("min_topic_score")
     for source in ("ccf_crossref", "ccf_openalex", "iacr_eprint"):
         if not hasattr(config.source, source):
             continue
@@ -77,6 +79,10 @@ def _apply_profile(config: DictConfig, user_cfg: DictConfig) -> None:
             getattr(config.source, source).keywords = keywords
         if search_queries and hasattr(getattr(config.source, source), "search_queries"):
             getattr(config.source, source).search_queries = search_queries
+        if topics and hasattr(getattr(config.source, source), "topics"):
+            getattr(config.source, source).topics = topics
+        if min_topic_score is not None and hasattr(getattr(config.source, source), "min_topic_score"):
+            getattr(config.source, source).min_topic_score = min_topic_score
 
 
 def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | None = None) -> DictConfig:
@@ -129,14 +135,16 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             _apply_profile(config, user_cfg)
 
             monthly = user_cfg.get("monthly") or {}
+            profile = user_cfg.get("profile") or {}
+            monthly_fields = profile.get("monthly_fields") or monthly.get("ccf_fields")
             if hasattr(config.source, "ccf_crossref"):
-                if monthly.get("ccf_fields"):
-                    config.source.ccf_crossref.fields = monthly.get("ccf_fields")
+                if monthly_fields:
+                    config.source.ccf_crossref.fields = monthly_fields
                 if monthly.get("ccf_ranks"):
                     config.source.ccf_crossref.ranks = monthly.get("ccf_ranks")
             if hasattr(config.source, "ccf_openalex"):
-                if monthly.get("ccf_fields"):
-                    config.source.ccf_openalex.fields = monthly.get("ccf_fields")
+                if monthly_fields:
+                    config.source.ccf_openalex.fields = monthly_fields
                 if monthly.get("ccf_ranks"):
                     config.source.ccf_openalex.ranks = monthly.get("ccf_ranks")
 

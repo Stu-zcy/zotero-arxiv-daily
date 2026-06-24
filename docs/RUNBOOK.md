@@ -3,7 +3,7 @@
 This repository runs two kinds of paper digests:
 
 - Daily: arXiv `cs.CR/cs.DS/cs.IT` plus IACR ePrint RSS.
-- Monthly/range: CCF 2026 A/B venues in `网络与信息安全` and `计算机科学理论`, retrieved from Crossref and filtered for FHE, PQC, lattice cryptography, public-key cryptography, and commitments.
+- Monthly/range: CCF 2026 A/B venues selected per user profile, retrieved from Crossref and filtered by user-specific topic groups. The default profiles include `网络与信息安全`, `计算机科学理论`, and selected `计算机体系结构/并行与分布计算/存储系统` venues so cryptographic implementation papers such as PQC/FHE acceleration are not missed.
 
 ## 1. Install
 
@@ -79,6 +79,17 @@ uv run src/zotero_arxiv_daily/main.py \
   --send-email true \
   executor.max_paper_num=15
 ```
+
+## 3.1 Monthly Search Strategy
+
+Zotero is used for reranking, not as the primary search query source. The monthly search is driven by each user's `users.yaml` profile:
+
+- `profile.monthly_fields`: CCF fields to monitor.
+- `profile.topics`: topic groups with keywords.
+- `profile.min_topic_score`: minimum number of keyword hits inside one topic group.
+- `profile.search_queries`: supplemental Crossref bibliographic queries for recall.
+
+The Crossref retriever first pulls papers by CCF venue and date, then applies strict local venue matching. It also runs supplemental bibliographic searches and keeps only papers that still match a selected CCF venue and a user topic. Short cryptographic tokens such as `LWE`, `SIS`, `FHE`, and `PQC` are matched with word boundaries to avoid accidental substring hits.
 
 ## 4. Logs And State
 

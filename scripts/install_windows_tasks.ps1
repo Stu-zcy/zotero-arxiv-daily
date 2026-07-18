@@ -21,16 +21,14 @@ Register-ScheduledTask `
   -Description "Daily arXiv + IACR ePrint paper push for $UserId" `
   -Force
 
-$monthlyAction = New-ScheduledTaskAction `
-  -Execute $UvPath `
-  -Argument "run src/zotero_arxiv_daily/main.py $UserFlag --mode monthly executor.max_paper_num=15" `
-  -WorkingDirectory $ProjectDir
-$monthlyTrigger = New-ScheduledTaskTrigger -Monthly -DaysOfMonth 1 -At 9:00AM
-Register-ScheduledTask `
-  -TaskName "zotero-arxiv-daily-$UserId-monthly" `
-  -Action $monthlyAction `
-  -Trigger $monthlyTrigger `
-  -Description "Monthly CCF Crossref/OpenAlex paper push for $UserId" `
-  -Force
+$monthlyTaskName = "zotero-arxiv-daily-$UserId-monthly"
+$monthlyCommand = "cd /d `"$ProjectDir`" && `"$UvPath`" run src/zotero_arxiv_daily/main.py $UserFlag --mode monthly executor.max_paper_num=15"
+schtasks.exe /Create `
+  /TN $monthlyTaskName `
+  /SC MONTHLY `
+  /D 1 `
+  /ST 09:00 `
+  /TR "cmd.exe /c $monthlyCommand" `
+  /F | Out-Host
 
 Write-Host "Scheduled tasks installed for $UserId in $ProjectDir"

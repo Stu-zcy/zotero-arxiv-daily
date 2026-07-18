@@ -198,95 +198,205 @@ users:
         - 网络与信息安全
         - 计算机科学理论
         - 计算机体系结构/并行与分布计算/存储系统
-      min_topic_score: 2
+      # Liruoyi prioritizes recall: one strong lattice/HE term is sufficient.
+      min_topic_score: 1
       topics:
-        - name: fhe
+        - name: homomorphic-encryption
           keywords:
             - fully homomorphic
+            - fully homomorphic encryption
             - homomorphic encryption
+            - partial homomorphic encryption
+            - partially homomorphic encryption
+            - somewhat homomorphic encryption
+            - leveled homomorphic encryption
+            - approximate homomorphic encryption
+            - multi-key homomorphic encryption
+            - multikey homomorphic encryption
+            - threshold homomorphic encryption
+            - distributed homomorphic encryption
             - fhe
             - tfhe
+            - fhew
+            - gsw
             - ckks
             - bfv
             - bgv
-            - bootstrapping
+            - dghv
+            - homomorphic bootstrapping
             - programmable bootstrapping
+            - circuit bootstrapping
+            - functional bootstrapping
+            - blind rotation
+            - key switching
+            - relinearization
+            - modulus switching
+            - ciphertext packing
+            - packed ciphertext
+            - homomorphic evaluation
+            - homomorphic computation
+            - circuit privacy
             - fhe circuit
-            - circuit construction
+            - fhe accelerator
+            - homomorphic encryption accelerator
+            - fhe hardware
+            - homomorphic encryption hardware
+            - autohog
+            - salus
         - name: lattice-foundations
           keywords:
-            - lattice
+            - lattice cryptography
             - lattice-based
             - lattice based
             - ideal lattice
             - module lattice
+            - q-ary lattice
+            - learning with errors
+            - ring learning with errors
+            - module learning with errors
+            - learning with rounding
+            - short integer solution
+            - ring short integer solution
+            - module short integer solution
             - lwe
             - rlwe
+            - mlwe
             - lwr
             - sis
+            - rsis
+            - msis
             - ntru
             - module-lwe
             - module lwe
-            - trapdoor
+            - ring-lwe
+            - ring lwe
+            - lattice trapdoor
+            - gadget lattice
+            - gadget matrix
+            - discrete gaussian
             - gaussian sampling
-        - name: fhe-implementation
-          keywords:
-            - homomorphic computation
-            - homomorphic evaluation
-            - bootstrapping
-            - ciphertext packing
-            - fhe accelerator
-            - fhe hardware
-            - fhe circuit
-            - circuit privacy
-            - boolean circuit
-            - arithmetic circuit
-            - encrypted circuit
-            - circuit bootstrapping
-            - autohog
-            - salus
+            - smoothing parameter
+            - shortest vector problem
+            - closest vector problem
+            - shortest independent vectors problem
+            - bounded distance decoding
+            - gapsvp
+            - usvp
+            - sivp
+            - lattice reduction
+            - lattice problem
+            - lattice hardness
+            - cryptographic lattice
+            - lattice cryptanalysis
+            - bkz
+            - lll algorithm
+            - worst-case to average-case
       search_queries:
         - fully homomorphic encryption
-        - FHE circuit construction
-        - AutoHoG fully homomorphic encryption
-        - SALUS fully homomorphic encryption
-        - FHE circuit privacy
-        - FHE circuit bootstrapping
-        - homomorphic circuit evaluation
+        - partially homomorphic encryption
+        - somewhat homomorphic encryption
+        - leveled homomorphic encryption
+        - approximate homomorphic encryption
+        - multi-key homomorphic encryption
+        - threshold homomorphic encryption
         - homomorphic evaluation
-        - homomorphic bootstrapping
+        - programmable bootstrapping
+        - circuit bootstrapping
+        - key switching homomorphic encryption
         - lattice cryptography
         - lattice based cryptography
-        - LWE
-        - RLWE
-        - SIS
-        - NTRU
+        - learning with errors cryptography
+        - short integer solution cryptography
+        - lattice reduction cryptography
+        - lattice trapdoor cryptography
+        - shortest vector problem cryptography
       keywords:
         - fully homomorphic
+        - fully homomorphic encryption
         - homomorphic encryption
+        - partial homomorphic encryption
+        - partially homomorphic encryption
+        - somewhat homomorphic encryption
+        - leveled homomorphic encryption
+        - approximate homomorphic encryption
+        - multi-key homomorphic encryption
+        - multikey homomorphic encryption
+        - threshold homomorphic encryption
+        - distributed homomorphic encryption
         - fhe
         - tfhe
+        - fhew
+        - gsw
         - ckks
         - bfv
         - bgv
-        - bootstrapping
+        - dghv
+        - homomorphic bootstrapping
         - programmable bootstrapping
-        - fhe circuit
-        - circuit privacy
-        - boolean circuit
-        - arithmetic circuit
-        - encrypted circuit
         - circuit bootstrapping
+        - functional bootstrapping
+        - blind rotation
+        - key switching
+        - relinearization
+        - modulus switching
+        - ciphertext packing
+        - packed ciphertext
+        - homomorphic evaluation
+        - homomorphic computation
+        - circuit privacy
+        - fhe circuit
+        - fhe accelerator
+        - homomorphic encryption accelerator
+        - fhe hardware
+        - homomorphic encryption hardware
         - autohog
         - salus
-        - lattice
+        - lattice cryptography
         - lattice-based
         - lattice based
+        - ideal lattice
+        - module lattice
+        - q-ary lattice
+        - learning with errors
+        - ring learning with errors
+        - module learning with errors
+        - learning with rounding
+        - short integer solution
+        - ring short integer solution
+        - module short integer solution
         - lwe
         - rlwe
+        - mlwe
         - lwr
         - sis
+        - rsis
+        - msis
         - ntru
+        - module-lwe
+        - module lwe
+        - ring-lwe
+        - ring lwe
+        - lattice trapdoor
+        - gadget lattice
+        - gadget matrix
+        - discrete gaussian
+        - gaussian sampling
+        - smoothing parameter
+        - shortest vector problem
+        - closest vector problem
+        - shortest independent vectors problem
+        - bounded distance decoding
+        - gapsvp
+        - usvp
+        - sivp
+        - lattice reduction
+        - lattice problem
+        - lattice hardness
+        - cryptographic lattice
+        - lattice cryptanalysis
+        - bkz
+        - lll algorithm
+        - worst-case to average-case
     monthly:
       ccf_fields:
         - 网络与信息安全

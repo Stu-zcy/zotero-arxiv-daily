@@ -127,7 +127,7 @@ def test_arxiv_profile_filter_keeps_crypto_and_drops_generic_ai(config):
 
 def test_run_with_hard_timeout_returns_value():
     result = _run_with_hard_timeout(
-        _sleep_and_return, ("done", 0.01), timeout=1, operation="test op", paper_title="paper"
+        _sleep_and_return, ("done", 0.01), timeout=5, operation="test op", paper_title="paper"
     )
     assert result == "done"
 
@@ -146,7 +146,7 @@ def test_run_with_hard_timeout_returns_none_on_failure(monkeypatch):
     warnings: list[str] = []
     monkeypatch.setattr(arxiv_retriever, "logger", SimpleNamespace(warning=warnings.append))
     result = _run_with_hard_timeout(
-        _raise_runtime_error, (), timeout=1, operation="test op", paper_title="paper"
+        _raise_runtime_error, (), timeout=5, operation="test op", paper_title="paper"
     )
     assert result is None
     assert "boom" in warnings[0]

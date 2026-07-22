@@ -147,6 +147,15 @@ def _short_month(value: str | None) -> str | None:
         return None
     return f"{match.group(1)[2:]}/{match.group(2)}"
 
+
+def _short_date(value: str | None) -> str | None:
+    if not value:
+        return None
+    match = re.match(r"^(\d{4})-(\d{2})-(\d{2})", str(value))
+    if not match:
+        return None
+    return f"{match.group(1)[2:]}/{match.group(2)}/{match.group(3)}"
+
 def _email_subject(config: DictConfig) -> str:
     runtime = config.get("runtime", {})
     mode = runtime.get("mode") or "daily"
@@ -154,6 +163,10 @@ def _email_subject(config: DictConfig) -> str:
     now = datetime.datetime.now()
     if mode == "daily":
         label = f"每日文献（{now.month}月{now.day}日）"
+    elif mode == "iacr-range":
+        start = _short_date(runtime.get("start_date"))
+        end = _short_date(runtime.get("end_date"))
+        label = f"IACR 文献（{start}-{end}）" if start and end else "IACR 文献"
     else:
         start = _short_month(runtime.get("start_date"))
         end = _short_month(runtime.get("end_date"))

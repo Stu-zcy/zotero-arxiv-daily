@@ -32,7 +32,7 @@ def _extract_runtime_args(argv: list[str]) -> RuntimeArgs:
     parser.add_argument("--user")
     parser.add_argument("--receiver-user")
     parser.add_argument("--all-users", action="store_true")
-    parser.add_argument("--mode", choices=["daily", "monthly", "test-range"])
+    parser.add_argument("--mode", choices=["daily", "monthly", "test-range", "iacr-range"])
     parser.add_argument("--start-date")
     parser.add_argument("--end-date")
     parser.add_argument("--send-email", type=_parse_bool)

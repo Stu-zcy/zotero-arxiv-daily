@@ -145,6 +145,17 @@ def test_email_subject_uses_chinese_monthly_range(config):
     assert _email_subject(config) == "每月文献（25/01-26/02） - chenyang"
 
 
+def test_email_subject_uses_iacr_range(config):
+    with open_dict(config):
+        config.runtime = {
+            "user": "liruoyi",
+            "mode": "iacr-range",
+            "start_date": "2026-07-08",
+            "end_date": "2026-07-22",
+        }
+    assert _email_subject(config) == "IACR 文献（26/07/08-26/07/22） - liruoyi"
+
+
 def test_send_email_falls_back_to_ssl(config, monkeypatch):
     sent = []
     call_count = {"smtp": 0}

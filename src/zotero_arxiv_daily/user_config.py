@@ -98,8 +98,8 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             raise ValueError(f"User '{args.user}' is not configured in users.yaml/users.local.yaml")
 
     mode = args.mode or "daily"
-    if mode not in {"daily", "monthly", "test-range"}:
-        raise ValueError("mode must be one of: daily, monthly, test-range")
+    if mode not in {"daily", "monthly", "test-range", "iacr-range"}:
+        raise ValueError("mode must be one of: daily, monthly, test-range, iacr-range")
 
     with open_dict(config):
         config.runtime = {
@@ -114,7 +114,7 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
         config.state.mode = mode
         config.state.path = f"state/{config.state.user}/seen.json"
         config.state.enabled = mode in {"daily", "monthly"}
-        config.state.ignore_seen = bool(args.ignore_seen) or mode == "test-range"
+        config.state.ignore_seen = bool(args.ignore_seen) or mode in {"test-range", "iacr-range"}
 
         if user_cfg is not None:
             zotero_cfg = user_cfg.get("zotero") or {}
@@ -183,6 +183,15 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             if hasattr(config.source, "ccf_openalex"):
                 config.source.ccf_openalex.start_date = start_date
                 config.source.ccf_openalex.end_date = end_date
+            if args.send_email is not None:
+                config.executor.send_empty = bool(args.send_email)
+        elif mode == "iacr-range":
+            if not args.start_date or not args.end_date:
+                raise ValueError("iacr-range requires --start-date and --end-date")
+            config.executor.source = ["iacr_eprint"]
+            config.source.iacr_eprint.start_date = args.start_date
+            config.source.iacr_eprint.end_date = args.end_date
+            config.source.iacr_eprint.categories = []
             if args.send_email is not None:
                 config.executor.send_empty = bool(args.send_email)
 

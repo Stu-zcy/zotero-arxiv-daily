@@ -101,3 +101,34 @@ users:
     assert updated.zotero.user_id == 2
     assert updated.zotero.api_key == "liruoyi-key"
     assert updated.email.receiver == "zcy@example.com"
+
+
+def test_apply_runtime_config_iacr_range(config, tmp_path):
+    (tmp_path / "users.yaml").write_text(
+        """
+users:
+  liruoyi:
+    zotero:
+      user_id: 2
+      api_key: liruoyi-key
+    email:
+      receiver: lry@example.com
+""",
+        encoding="utf-8",
+    )
+
+    updated = apply_runtime_config(
+        config,
+        RuntimeArgs(
+            user="liruoyi",
+            mode="iacr-range",
+            start_date="2026-07-08",
+            end_date="2026-07-22",
+        ),
+        root=tmp_path,
+    )
+
+    assert list(updated.executor.source) == ["iacr_eprint"]
+    assert updated.source.iacr_eprint.start_date == "2026-07-08"
+    assert updated.source.iacr_eprint.end_date == "2026-07-22"
+    assert updated.state.ignore_seen is True

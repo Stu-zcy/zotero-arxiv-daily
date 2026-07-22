@@ -116,6 +116,10 @@ llm:
   language: English # Preferred language for the TL;DR. Example: English
 
 reranker:
+  deepseek:
+    batch_size: 20
+    max_corpus_papers: 100
+    abstract_chars: 500
   local:
     model: jinaai/jina-embeddings-v5-text-nano-retrieval # The Hugging Face model name of the local embedding model. Example: jinaai/jina-embeddings-v5-text-nano
     encode_kwargs:
@@ -133,4 +137,4 @@ executor:
   send_empty: false # Whether to send an empty email even if no new papers today. Example: true
   max_paper_num: 100 # The maximum number of the papers presented in the email. Example: 100
   source: ??? # The sources of papers to retrieve. Example: ['arxiv','biorxiv','medrxiv']
-  reranker: local # The reranker to use. Example: 'local' or 'api'
+  reranker: deepseek # The reranker to use. Example: 'deepseek', 'local', or 'api'

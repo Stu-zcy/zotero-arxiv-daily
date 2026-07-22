@@ -117,6 +117,6 @@ source:
 executor:
   debug: ${oc.env:DEBUG,null}
   source: ['arxiv','ccf_openalex']
-  reranker: local
+  reranker: deepseek
   max_paper_num: 20
   send_empty: false

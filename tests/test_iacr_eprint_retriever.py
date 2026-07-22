@@ -1,4 +1,6 @@
 from omegaconf import open_dict
+import requests
+from types import SimpleNamespace
 
 from zotero_arxiv_daily.retriever.iacr_eprint_retriever import IacrEprintRetriever, _keyword_in_text, _normalize_text
 
@@ -67,3 +69,29 @@ def test_iacr_keyword_matching_avoids_substring_false_positives():
     assert not _keyword_in_text("sis", searchable)
     assert not _keyword_in_text("fhe", searchable)
     assert _keyword_in_text("physics", searchable)
+
+
+def test_iacr_fetch_falls_back_to_powershell_when_requests_fails(config, monkeypatch):
+    with open_dict(config):
+        config.source.iacr_eprint.request_timeout = 30
+        config.source.iacr_eprint.proxy = None
+
+    class FailingSession:
+        def __init__(self):
+            self.headers = {}
+            self.proxies = {}
+
+        def get(self, url, timeout):
+            raise requests.exceptions.SSLError("tls eof")
+
+    calls = []
+
+    def fake_run(command, check, capture_output, text, timeout):
+        calls.append(command)
+        return SimpleNamespace(stdout=RSS)
+
+    monkeypatch.setattr("zotero_arxiv_daily.retriever.iacr_eprint_retriever.requests.Session", FailingSession)
+    monkeypatch.setattr("zotero_arxiv_daily.retriever.iacr_eprint_retriever.subprocess.run", fake_run)
+
+    assert IacrEprintRetriever(config)._fetch_feed() == RSS
+    assert calls

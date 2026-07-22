@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import subprocess
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -103,6 +104,20 @@ def _keyword_in_text(keyword: str, searchable: str) -> bool:
     return re.search(rf"\b{re.escape(normalized_keyword)}\b", searchable) is not None
 
 
+def _fetch_with_powershell(url: str, timeout: int) -> str:
+    command = [
+        "powershell",
+        "-NoProfile",
+        "-Command",
+        (
+            "$ProgressPreference='SilentlyContinue'; "
+            f"(Invoke-WebRequest -Uri {url!r} -UseBasicParsing -TimeoutSec {timeout}).Content"
+        ),
+    ]
+    completed = subprocess.run(command, check=True, capture_output=True, text=True, timeout=timeout + 10)
+    return completed.stdout
+
+
 @register_retriever("iacr_eprint")
 class IacrEprintRetriever(BaseRetriever):
     def __init__(self, config):
@@ -117,9 +132,15 @@ class IacrEprintRetriever(BaseRetriever):
             session.proxies.update({"http": str(proxy), "https": str(proxy)})
             logger.info(f"Using IACR ePrint proxy: {proxy}")
         timeout = int(self.retriever_config.get("request_timeout") or 30)
-        response = session.get(str(self.retriever_config.feed_url), timeout=timeout)
-        response.raise_for_status()
-        return response.text
+        try:
+            response = session.get(str(self.retriever_config.feed_url), timeout=timeout)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as exc:
+            if proxy:
+                raise
+            logger.warning(f"IACR ePrint requests fetch failed; trying PowerShell fallback: {exc}")
+            return _fetch_with_powershell(str(self.retriever_config.feed_url), timeout)
 
     def _retrieve_raw_papers(self) -> list[EprintPaper]:
         feed_text = self._fetch_feed()

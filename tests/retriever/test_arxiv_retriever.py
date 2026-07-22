@@ -64,6 +64,22 @@ def test_arxiv_retriever(config, mock_feedparser, monkeypatch):
     assert set(p.title for p in papers) == set(e.title for e in new_entries)
 
 
+def test_arxiv_retriever_accepts_feed_without_attribute_title(config, mock_feedparser, monkeypatch):
+    mock_feedparser.feed = {}
+
+    class FakeClient:
+        def __init__(self, **kw):
+            pass
+
+        def results(self, search):
+            return iter([])
+
+    monkeypatch.setattr(arxiv_retriever.arxiv, "Client", FakeClient)
+
+    retriever = ArxivRetriever(config)
+    assert retriever._retrieve_raw_papers() == []
+
+
 def test_arxiv_profile_filter_keeps_crypto_and_drops_generic_ai(config):
     with open_dict(config):
         config.source.arxiv.keyword_required = True

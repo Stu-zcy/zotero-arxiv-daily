@@ -1,7 +1,8 @@
 param(
   [string]$ProjectDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
   [string]$UserId = "all",
-  [string]$UvPath = "uv"
+  [string]$UvPath = "uv",
+  [bool]$RemoveLegacyTasks = $true
 )
 
 $UserFlag = "--all-users"
@@ -9,9 +10,21 @@ if ($UserId -ne "all") {
   $UserFlag = "--user $UserId"
 }
 
+if ($RemoveLegacyTasks) {
+  @(
+    "BUAA Zotero Arxiv Daily",
+    "BUAA Zotero Arxiv Monthly"
+  ) | ForEach-Object {
+    if (Get-ScheduledTask -TaskName $_ -ErrorAction SilentlyContinue) {
+      Unregister-ScheduledTask -TaskName $_ -Confirm:$false
+      Write-Host "Removed legacy scheduled task: $_"
+    }
+  }
+}
+
 $dailyAction = New-ScheduledTaskAction `
   -Execute $UvPath `
-  -Argument "run src/zotero_arxiv_daily/main.py $UserFlag --mode daily --send-email true executor.max_paper_num=10" `
+  -Argument "run src/zotero_arxiv_daily/main.py $UserFlag --mode daily executor.max_paper_num=10" `
   -WorkingDirectory $ProjectDir
 $dailyTrigger = New-ScheduledTaskTrigger -Daily -At 8:00AM
 Register-ScheduledTask `

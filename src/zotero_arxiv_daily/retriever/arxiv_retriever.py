@@ -37,6 +37,13 @@ def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def _feed_title(parsed_feed: Any) -> str:
+    feed = getattr(parsed_feed, "feed", {}) or {}
+    if hasattr(feed, "get"):
+        return str(feed.get("title") or "")
+    return str(getattr(feed, "title", "") or "")
+
+
 def _keyword_in_text(keyword: str, searchable: str) -> bool:
     normalized_keyword = _normalize_text(keyword)
     if not normalized_keyword:
@@ -161,7 +168,7 @@ class ArxivRetriever(BaseRetriever):
         include_cross_list = self.config.source.arxiv.get("include_cross_list", False)
         # Get the latest paper from arxiv rss feed
         feed = feedparser.parse(f"https://rss.arxiv.org/atom/{query}")
-        if 'Feed error for query' in feed.feed.title:
+        if 'Feed error for query' in _feed_title(feed):
             raise Exception(f"Invalid ARXIV_QUERY: {query}.")
         raw_papers = []
         allowed_announce_types = {"new", "cross"} if include_cross_list else {"new"}

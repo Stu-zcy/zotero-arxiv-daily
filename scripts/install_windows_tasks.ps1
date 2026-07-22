@@ -26,7 +26,7 @@ $dailyAction = New-ScheduledTaskAction `
   -Execute $UvPath `
   -Argument "run src/zotero_arxiv_daily/main.py $UserFlag --mode daily executor.max_paper_num=10" `
   -WorkingDirectory $ProjectDir
-$dailyTrigger = New-ScheduledTaskTrigger -Daily -At 8:00AM
+$dailyTrigger = New-ScheduledTaskTrigger -Daily -At 9:00AM
 Register-ScheduledTask `
   -TaskName "zotero-arxiv-daily-$UserId-daily" `
   -Action $dailyAction `
@@ -36,7 +36,7 @@ Register-ScheduledTask `
 
 $monthlyTaskName = "zotero-arxiv-daily-$UserId-monthly"
 $monthlyArgs = "run src/zotero_arxiv_daily/main.py $UserFlag --mode monthly executor.max_paper_num=15"
-$monthlyStart = (Get-Date -Hour 9 -Minute 0 -Second 0).ToString("yyyy-MM-ddTHH:mm:ss")
+$monthlyStart = (Get-Date -Hour 10 -Minute 0 -Second 0).ToString("yyyy-MM-ddTHH:mm:ss")
 $escapedUvPath = [Security.SecurityElement]::Escape($UvPath)
 $escapedMonthlyArgs = [Security.SecurityElement]::Escape($monthlyArgs)
 $escapedProjectDir = [Security.SecurityElement]::Escape($ProjectDir)

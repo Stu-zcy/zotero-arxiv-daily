@@ -30,6 +30,7 @@ def _extract_runtime_args(argv: list[str]) -> RuntimeArgs:
         args.pop(1)
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--user")
+    parser.add_argument("--receiver-user")
     parser.add_argument("--all-users", action="store_true")
     parser.add_argument("--mode", choices=["daily", "monthly", "test-range"])
     parser.add_argument("--start-date")
@@ -40,6 +41,7 @@ def _extract_runtime_args(argv: list[str]) -> RuntimeArgs:
     sys.argv = [args[0], *remaining]
     return RuntimeArgs(
         user=parsed.user,
+        receiver_user=parsed.receiver_user,
         all_users=parsed.all_users,
         mode=parsed.mode,
         start_date=parsed.start_date,
@@ -59,6 +61,7 @@ def main(config:DictConfig):
         for user_id in configured_user_ids():
             user_args = RuntimeArgs(
                 user=user_id,
+                receiver_user=RUNTIME_ARGS.receiver_user,
                 all_users=False,
                 mode=RUNTIME_ARGS.mode,
                 start_date=RUNTIME_ARGS.start_date,

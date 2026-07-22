@@ -12,6 +12,7 @@ from omegaconf import DictConfig, OmegaConf, open_dict
 @dataclass
 class RuntimeArgs:
     user: str | None = None
+    receiver_user: str | None = None
     all_users: bool = False
     mode: str | None = None
     start_date: str | None = None
@@ -147,6 +148,18 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
                     config.source.ccf_openalex.fields = monthly_fields
                 if monthly.get("ccf_ranks"):
                     config.source.ccf_openalex.ranks = monthly.get("ccf_ranks")
+
+        if args.receiver_user:
+            receiver_cfg = users_cfg.get("users", {}).get(args.receiver_user)
+            if receiver_cfg is None:
+                raise ValueError(
+                    f"Receiver user '{args.receiver_user}' is not configured in users.yaml/users.local.yaml"
+                )
+            receiver = (receiver_cfg.get("email") or {}).get("receiver")
+            config.email.receiver = _require(
+                receiver,
+                f"Email receiver is missing for user '{args.receiver_user}'",
+            )
 
         if mode == "daily":
             config.executor.source = ["arxiv", "iacr_eprint"]

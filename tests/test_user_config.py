@@ -70,3 +70,34 @@ users:
     assert list(updated.source.iacr_eprint.categories) == []
     assert updated.state.enabled is True
     assert updated.state.ignore_seen is False
+
+
+def test_apply_runtime_config_can_route_email_to_another_user(config, tmp_path):
+    (tmp_path / "users.yaml").write_text(
+        """
+users:
+  chenyang:
+    zotero:
+      user_id: 1
+      api_key: chenyang-key
+    email:
+      receiver: zcy@example.com
+  liruoyi:
+    zotero:
+      user_id: 2
+      api_key: liruoyi-key
+    email:
+      receiver: lry@example.com
+""",
+        encoding="utf-8",
+    )
+
+    updated = apply_runtime_config(
+        config,
+        RuntimeArgs(user="liruoyi", receiver_user="chenyang", mode="daily"),
+        root=tmp_path,
+    )
+
+    assert updated.zotero.user_id == 2
+    assert updated.zotero.api_key == "liruoyi-key"
+    assert updated.email.receiver == "zcy@example.com"

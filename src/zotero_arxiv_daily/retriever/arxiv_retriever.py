@@ -8,6 +8,7 @@ import feedparser
 from tqdm import tqdm
 import multiprocessing
 import os
+import subprocess
 from queue import Empty
 from time import sleep
 from typing import Any, Callable, TypeVar
@@ -42,6 +43,47 @@ def _feed_title(parsed_feed: Any) -> str:
     if hasattr(feed, "get"):
         return str(feed.get("title") or "")
     return str(getattr(feed, "title", "") or "")
+
+
+def _parse_arxiv_feed(feed_text: str):
+    parsed = feedparser.parse(feed_text)
+    if not _feed_title(parsed) and not parsed.entries:
+        error = getattr(parsed, "bozo_exception", None)
+        raise ValueError(f"Invalid arXiv RSS response: {error or 'missing feed metadata'}")
+    return parsed
+
+
+def _fetch_arxiv_feed(query: str, timeout: int):
+    url = f"https://rss.arxiv.org/atom/{query}"
+    session = requests.Session()
+    session.headers.update(
+        {"User-Agent": "zotero-arxiv-daily/1.0", "Accept": "application/atom+xml,application/xml,text/xml"}
+    )
+    try:
+        response = session.get(url, timeout=timeout)
+        response.raise_for_status()
+        return _parse_arxiv_feed(response.text)
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning(f"arXiv RSS requests fetch failed; trying curl fallback: {exc}")
+
+    curl = "curl.exe" if os.name == "nt" else "curl"
+    completed = subprocess.run(
+        [
+            curl,
+            "--location",
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--max-time",
+            str(timeout),
+            url,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout + 10,
+    )
+    return _parse_arxiv_feed(completed.stdout)
 
 
 def _keyword_in_text(keyword: str, searchable: str) -> bool:
@@ -167,7 +209,8 @@ class ArxivRetriever(BaseRetriever):
         query = '+'.join(self.config.source.arxiv.category)
         include_cross_list = self.config.source.arxiv.get("include_cross_list", False)
         # Get the latest paper from arxiv rss feed
-        feed = feedparser.parse(f"https://rss.arxiv.org/atom/{query}")
+        timeout = int(self.retriever_config.get("request_timeout") or 30)
+        feed = _fetch_arxiv_feed(query, timeout)
         if 'Feed error for query' in _feed_title(feed):
             raise Exception(f"Invalid ARXIV_QUERY: {query}.")
         raw_papers = []

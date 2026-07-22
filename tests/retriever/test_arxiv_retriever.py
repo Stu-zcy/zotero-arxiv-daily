@@ -1,9 +1,11 @@
 """Tests for ArxivRetriever."""
 
 import time
+import subprocess
 from types import SimpleNamespace
 
 import feedparser
+import requests
 from omegaconf import open_dict
 
 from zotero_arxiv_daily.retriever.arxiv_retriever import ArxivRetriever, _run_with_hard_timeout
@@ -17,6 +19,62 @@ def _sleep_and_return(value: str, delay_seconds: float) -> str:
 
 def _raise_runtime_error() -> None:
     raise RuntimeError("boom")
+
+
+def test_fetch_arxiv_feed_parses_explicit_http_response(monkeypatch):
+    feed_text = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>cs.CR updates on arXiv.org</title>
+  <entry><id>oai:arXiv.org:2607.18342v1</id><title>PRISM</title></entry>
+</feed>"""
+
+    class FakeResponse:
+        text = feed_text
+
+        def raise_for_status(self):
+            return None
+
+    class FakeSession:
+        headers = {}
+
+        def get(self, url, timeout):
+            assert url == "https://rss.arxiv.org/atom/cs.CR"
+            assert timeout == 30
+            return FakeResponse()
+
+    monkeypatch.setattr(arxiv_retriever.requests, "Session", FakeSession)
+
+    parsed = arxiv_retriever._fetch_arxiv_feed("cs.CR", timeout=30)
+
+    assert len(parsed.entries) == 1
+    assert parsed.entries[0].title == "PRISM"
+
+
+def test_fetch_arxiv_feed_falls_back_to_curl_on_request_failure(monkeypatch):
+    feed_text = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>cs.CR updates on arXiv.org</title>
+  <entry><id>oai:arXiv.org:2607.18342v1</id><title>PRISM</title></entry>
+</feed>"""
+
+    class FailingSession:
+        headers = {}
+
+        def get(self, url, timeout):
+            raise requests.Timeout("timed out")
+
+    def fake_run(command, **kwargs):
+        assert command[0] in {"curl", "curl.exe"}
+        assert "https://rss.arxiv.org/atom/cs.CR" in command
+        return subprocess.CompletedProcess(command, 0, stdout=feed_text, stderr="")
+
+    monkeypatch.setattr(arxiv_retriever.requests, "Session", FailingSession)
+    monkeypatch.setattr(arxiv_retriever.subprocess, "run", fake_run)
+
+    parsed = arxiv_retriever._fetch_arxiv_feed("cs.CR", timeout=30)
+
+    assert len(parsed.entries) == 1
+    assert parsed.entries[0].title == "PRISM"
 
 
 def test_arxiv_retriever(config, mock_feedparser, monkeypatch):

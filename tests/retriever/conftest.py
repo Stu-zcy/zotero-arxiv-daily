@@ -25,6 +25,10 @@ def mock_feedparser(monkeypatch):
         return raw_parse(url_or_bytes, *args, **kwargs)
 
     monkeypatch.setattr(feedparser, "parse", _patched)
+    monkeypatch.setattr(
+        "zotero_arxiv_daily.retriever.arxiv_retriever._fetch_arxiv_feed",
+        lambda query, timeout: parsed,
+    )
     return parsed
 
 

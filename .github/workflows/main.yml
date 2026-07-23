@@ -14,6 +14,15 @@ on:
         options:
           - daily
           - iacr-range
+      user:
+        description: "Recipient profile"
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - chenyang
+          - liruoyi
       start_date:
         description: "Start date for iacr-range (YYYY-MM-DD)"
         required: false
@@ -34,10 +43,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Run digest for all users
         env:
@@ -51,7 +60,11 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
         run: |
-          args=(run src/zotero_arxiv_daily/main.py --all-users --mode "${{ inputs.mode || 'daily' }}" --send-email "${{ inputs.send_empty || 'false' }}" executor.max_paper_num=10)
+          user_args=(--all-users)
+          if [ "${{ inputs.user || 'all' }}" != "all" ]; then
+            user_args=(--user "${{ inputs.user }}")
+          fi
+          args=(run src/zotero_arxiv_daily/main.py "${user_args[@]}" --mode "${{ inputs.mode || 'daily' }}" --send-email "${{ inputs.send_empty || 'false' }}" executor.max_paper_num=10)
           if [ "${{ inputs.mode || 'daily' }}" = "iacr-range" ]; then
             args+=(--start-date "${{ inputs.start_date }}" --end-date "${{ inputs.end_date }}")
           fi

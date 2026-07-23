@@ -8,6 +8,7 @@ from .utils import glob_match
 from .retriever import get_retriever_cls
 from .protocol import CorpusPaper
 import random
+import time
 from datetime import datetime
 from .reranker import get_reranker_cls
 from .construct_email import render_email
@@ -164,9 +165,25 @@ class Executor:
     def fetch_zotero_corpus(self) -> list[CorpusPaper]:
         logger.info("Fetching zotero corpus")
         zot = zotero.Zotero(self.config.zotero.user_id, 'user', self.config.zotero.api_key)
-        collections = zot.everything(zot.collections())
+        retries = max(1, int(self.config.zotero.get("request_retries", 3)))
+        retry_delay = max(0, float(self.config.zotero.get("retry_delay", 5)))
+
+        def fetch(resource):
+            for attempt in range(1, retries + 1):
+                try:
+                    return zot.everything(resource())
+                except Exception as exc:
+                    if attempt == retries:
+                        raise
+                    wait = retry_delay * attempt
+                    logger.warning(
+                        f"Zotero request failed ({attempt}/{retries}); retrying in {wait:.1f}s: {exc}"
+                    )
+                    time.sleep(wait)
+
+        collections = fetch(zot.collections)
         collections = {c['key']:c for c in collections}
-        corpus = zot.everything(zot.items(itemType='conferencePaper || journalArticle || preprint'))
+        corpus = fetch(lambda: zot.items(itemType='conferencePaper || journalArticle || preprint'))
         corpus = [c for c in corpus if c['data']['abstractNote'] != '']
         def get_collection_path(col_key:str) -> str:
             if p := collections[col_key]['data']['parentCollection']:

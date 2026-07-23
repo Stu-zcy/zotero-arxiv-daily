@@ -143,6 +143,31 @@ def test_fetch_zotero_corpus_paper_with_zero_collections(config, monkeypatch):
     assert corpus[0].paths == []
 
 
+def test_fetch_zotero_corpus_retries_transient_failure(config, monkeypatch):
+    from tests.canned_responses import make_stub_zotero_client
+
+    stub_zot = make_stub_zotero_client()
+    original_collections = stub_zot.collections
+    calls = {"collections": 0}
+
+    def flaky_collections():
+        calls["collections"] += 1
+        if calls["collections"] == 1:
+            raise ConnectionError("temporary TLS failure")
+        return original_collections()
+
+    stub_zot.collections = flaky_collections
+    monkeypatch.setattr("zotero_arxiv_daily.executor.zotero.Zotero", lambda *a, **kw: stub_zot)
+    monkeypatch.setattr("zotero_arxiv_daily.executor.time.sleep", lambda _: None)
+
+    executor = Executor.__new__(Executor)
+    executor.config = config
+    corpus = executor.fetch_zotero_corpus()
+
+    assert len(corpus) == 2
+    assert calls["collections"] == 2
+
+
 # ---------------------------------------------------------------------------
 # E2E: Executor.run()
 # ---------------------------------------------------------------------------

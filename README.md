@@ -18,19 +18,31 @@
 
 Zotero 不是主搜索源，而是 rerank 语料。月度候选主要由每个用户的 `users.yaml` profile 决定。
 
-## 当前用户
+## 用户配置示例
 
-当前配置包含两个用户：
+README 不公开实际用户身份。以下统一使用 `user_a`（用户 A）说明配置方式。
 
-- `chenyang`
-  - 方向：FHE、PQC、hash-based PQC、GPU/FPGA/accelerator、格、公钥、承诺、属性加密、TEE
-  - Zotero 凭据从 `.env` 读取
-- `liruoyi`
-  - 方向：格密码理论（格困难问题、LWE/SIS/NTRU、格归约与陷门）及全部同态加密方向
-  - 召回策略：命中 1 个强领域词即可，覆盖 PHE/SHE/leveled/FHE、主流方案与 bootstrapping/key switching/packing 等技术
-  - Zotero 凭据从 `users.local.yaml` 读取
+用户 A 可以订阅 FHE、格密码和 PQC 等方向。公开的研究方向、关键词和检索规则放在 `users.yaml`：
 
-真实密钥只保存在本地 `.env` 和 `users.local.yaml`，这两个文件不会提交到 Git。
+```yaml
+users:
+  user_a:
+    zotero:
+      user_id: ${oc.env:USER_A_ZOTERO_ID,null}
+      api_key: ${oc.env:USER_A_ZOTERO_KEY,null}
+      include_path: null
+      ignore_path: null
+    email:
+      receiver: ${oc.env:USER_A_RECEIVER,null}
+    profile:
+      min_topic_score: 1
+      keywords:
+        - fully homomorphic encryption
+        - lattice cryptography
+        - post-quantum cryptography
+```
+
+真实 Zotero 凭据、邮箱地址和 API Key 只存放在本地忽略文件或 GitHub Actions Secrets 中，不提交到 Git。
 
 ## 安装
 
@@ -47,16 +59,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## 本地配置
 
-`.env` 保存通用发件邮箱、DeepSeek、旧用户 Zotero：
+`.env` 保存通用发件邮箱、DeepSeek 和用户 A 的本地凭据：
 
 ```bash
-ZOTERO_ID=...
-ZOTERO_KEY=...
+USER_A_ZOTERO_ID=...
+USER_A_ZOTERO_KEY=...
+USER_A_RECEIVER=...
 OPENAI_API_KEY=...
 OPENAI_API_BASE=https://api.deepseek.com
 SENDER=...
 SENDER_PASSWORD=...
-RECEIVER=...
 OPENALEX_MAILTO=...
 DEBUG=false
 ```
@@ -65,7 +77,7 @@ DEBUG=false
 
 ```yaml
 users:
-  liruoyi:
+  user_a:
     zotero:
       user_id: "..."
       api_key: "..."
@@ -104,8 +116,8 @@ uv run src/zotero_arxiv_daily/main.py \
 单用户运行：
 
 ```bash
-uv run src/zotero_arxiv_daily/main.py --user chenyang --mode daily --send-email true
-uv run src/zotero_arxiv_daily/main.py --user liruoyi --mode test-range --start-date 2026-04-01 --end-date 2026-04-30 --send-email true
+uv run src/zotero_arxiv_daily/main.py --user user_a --mode daily --send-email true
+uv run src/zotero_arxiv_daily/main.py --user user_a --mode test-range --start-date 2026-04-01 --end-date 2026-04-30 --send-email true
 ```
 
 ## 月推搜索策略
@@ -135,8 +147,7 @@ data/ccf2026_entries.json
 - `GRASP: Accelerating Hash-Based PQC Performance on GPU Parallel Architecture`
 - venue: `IEEE Transactions on Computers`
 - CCF: A
-- 对 `chenyang` 属于强相关 PQC/GPU 方向
-- 对 `liruoyi` 不属于 FHE/格基础/FHE circuit 方向
+- 对订阅 PQC/GPU 方向的用户 A 属于强相关论文
 
 ## 日志与状态
 
@@ -158,12 +169,79 @@ state/{user}/seen.json
 
 ```text
 Paper Digest
-from:chen.zcy@foxmail.com
+from:<sender-address>
 ```
 
 并检查 Gmail 的“垃圾邮件 / 所有邮件 / 过滤器归档”。日志中的 `SMTP accepted message for ...` 表示 SMTP 服务器接受投递，但不保证 Gmail 一定放入 Inbox。
 
-## 后台运行
+## GitHub Actions 配置
+
+GitHub Actions 是推荐的唯一自动推送端。当前工作流位于 `.github/workflows/main.yml`，支持定时执行和网页手动补发。
+
+### 1. Fork 并启用 Actions
+
+1. Fork 本仓库。
+2. 打开 fork 仓库的 `Actions` 页面并启用工作流。
+3. 确认默认分支为 `main`，因为 GitHub 只从默认分支读取定时工作流。
+
+### 2. 配置 Secrets
+
+打开仓库 `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`，为工作流添加以下 Secrets。值不会写入公开提交，也不会在 Actions 日志中明文显示。
+
+| Secret | 用途 |
+| --- | --- |
+| `USER_A_ZOTERO_ID` | 用户 A 的 Zotero user ID |
+| `USER_A_ZOTERO_KEY` | 用户 A 的 Zotero API Key，只需只读权限 |
+| `USER_A_RECEIVER` | 用户 A 的收件邮箱 |
+| `SENDER` | SMTP 发件邮箱 |
+| `SENDER_PASSWORD` | SMTP 授权码，不是普通登录密码 |
+| `OPENAI_API_KEY` | DeepSeek API Key |
+| `OPENAI_API_BASE` | 固定为 `https://api.deepseek.com` |
+
+Secret 名称必须与 `users.yaml` 中的 `${oc.env:...}` 以及工作流 `env` 映射一致。例如：
+
+```yaml
+env:
+  USER_A_ZOTERO_ID: ${{ secrets.USER_A_ZOTERO_ID }}
+  USER_A_ZOTERO_KEY: ${{ secrets.USER_A_ZOTERO_KEY }}
+  USER_A_RECEIVER: ${{ secrets.USER_A_RECEIVER }}
+  SENDER: ${{ secrets.SENDER }}
+  SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+```
+
+不要把 Secret 值写入 `users.yaml`、工作流 YAML、README、Repository Variables 或命令日志。
+
+### 3. 配置每天 09:07 推送
+
+GitHub cron 使用 UTC。北京时间 09:07 对应 UTC 01:07：
+
+```yaml
+on:
+  schedule:
+    - cron: "7 1 * * *"
+  workflow_dispatch:
+```
+
+避开整点可以降低 GitHub Actions 高负载时的延迟或丢弃概率。定时运行会处理所有已配置用户；即使当天没有匹配论文，也会发送一封结果邮件。
+
+### 4. 手动补发
+
+打开 `Actions` -> `Send paper digest` -> `Run workflow`，可选择：
+
+- `mode=daily`：补发当天 arXiv + IACR 日报。
+- `mode=iacr-range`：按 `start_date` 和 `end_date` 补发 IACR 区间报告。
+- `user=all` 或用户 A：选择全部用户或单个用户。
+- `send_empty=true`：即使没有匹配论文也发送结果。
+
+运行完成后检查日志中的 `SMTP accepted message for ***` 和 `Email sent successfully`。前者表示 SMTP 服务已接受邮件，但不保证收件服务一定放入收件箱。
+
+### 5. 避免重复推送
+
+同一时间只保留一个自动调度端。启用 GitHub Actions 后，应停用 Windows Task Scheduler、macOS `cron` 或其他服务器上的相同任务；手动补发仍可从 Actions 页面执行。
+
+## 本地后台运行
 
 macOS / Linux：
 
@@ -177,7 +255,7 @@ Windows：
 powershell -ExecutionPolicy Bypass -File scripts/install_windows_tasks.ps1 -UserId all
 ```
 
-默认不做常驻 daemon，使用系统调度器，便于迁移和失败重跑。
+默认不做常驻 daemon。本地调度仅用于不采用 GitHub Actions 的部署方式。
 
 ## 测试
 
@@ -185,7 +263,7 @@ powershell -ExecutionPolicy Bypass -File scripts/install_windows_tasks.ps1 -User
 uv run pytest -q
 ```
 
-## GitHub
+## 仓库来源
 
 当前仓库：
 

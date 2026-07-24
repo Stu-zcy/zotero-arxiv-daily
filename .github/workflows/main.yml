@@ -64,7 +64,7 @@ jobs:
           if [ "${{ inputs.user || 'all' }}" != "all" ]; then
             user_args=(--user "${{ inputs.user }}")
           fi
-          args=(run src/zotero_arxiv_daily/main.py "${user_args[@]}" --mode "${{ inputs.mode || 'daily' }}" --send-email "${{ inputs.send_empty || 'false' }}" executor.max_paper_num=10)
+          args=(run src/zotero_arxiv_daily/main.py "${user_args[@]}" --mode "${{ inputs.mode || 'daily' }}" --send-email "${{ github.event_name == 'schedule' || inputs.send_empty }}" executor.max_paper_num=10)
           if [ "${{ inputs.mode || 'daily' }}" = "iacr-range" ]; then
             args+=(--start-date "${{ inputs.start_date }}" --end-date "${{ inputs.end_date }}")
           fi

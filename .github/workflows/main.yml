@@ -1,9 +1,9 @@
 name: Send paper digest
 
 on:
-  # 09:00 Asia/Shanghai = 01:00 UTC.
+  # 09:07 Asia/Shanghai = 01:07 UTC. Avoid the high-load top of the hour.
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "7 1 * * *"
   workflow_dispatch:
     inputs:
       mode:

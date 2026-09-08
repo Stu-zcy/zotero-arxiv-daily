@@ -163,6 +163,10 @@ def _email_subject(config: DictConfig) -> str:
     now = datetime.datetime.now()
     if mode == "daily":
         label = f"每日文献（{now.month}月{now.day}日）"
+    elif mode == "daily-range":
+        start = _short_date(runtime.get("start_date"))
+        end = _short_date(runtime.get("end_date"))
+        label = f"补发文献（{start}-{end}）" if start and end else "补发文献"
     elif mode == "iacr-range":
         start = _short_date(runtime.get("start_date"))
         end = _short_date(runtime.get("end_date"))

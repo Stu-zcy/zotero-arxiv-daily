@@ -15,6 +15,7 @@ from typing import Any, Callable, TypeVar
 from loguru import logger
 import requests
 import re
+from datetime import datetime
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 T = TypeVar("T")
@@ -206,8 +207,35 @@ class ArxivRetriever(BaseRetriever):
         max_batch_retries = int(self.retriever_config.get("max_batch_retries") or 2)
         batch_retry_delay = float(self.retriever_config.get("batch_retry_delay") or 20)
         client = arxiv.Client(num_retries=1, delay_seconds=request_delay)
-        query = '+'.join(self.config.source.arxiv.category)
+        categories = [str(category) for category in self.config.source.arxiv.category]
+        query = '+'.join(categories)
         include_cross_list = self.config.source.arxiv.get("include_cross_list", False)
+        start_date = self.retriever_config.get("start_date")
+        end_date = self.retriever_config.get("end_date")
+        if start_date or end_date:
+            if not start_date or not end_date:
+                raise ValueError("arxiv start_date and end_date must be provided together")
+            start = datetime.strptime(str(start_date), "%Y-%m-%d")
+            end = datetime.strptime(str(end_date), "%Y-%m-%d")
+            if start > end:
+                raise ValueError("arxiv start_date must not be after end_date")
+            category_query = " OR ".join(f"cat:{category}" for category in categories)
+            date_query = f"submittedDate:[{start:%Y%m%d}0000 TO {end:%Y%m%d}2359]"
+            max_papers = self.retriever_config.get("max_papers")
+            search = arxiv.Search(
+                query=f"({category_query}) AND {date_query}",
+                max_results=int(max_papers) if max_papers else None,
+                sort_by=arxiv.SortCriterion.SubmittedDate,
+                sort_order=arxiv.SortOrder.Ascending,
+            )
+            raw_papers = list(client.results(search))
+            if not include_cross_list:
+                raw_papers = [paper for paper in raw_papers if paper.primary_category in categories]
+            logger.info(
+                f"arXiv range query returned {len(raw_papers)} papers for {start_date} to {end_date}"
+            )
+            return self._filter_by_profile(raw_papers)
+
         # Get the latest paper from arxiv rss feed
         timeout = int(self.retriever_config.get("request_timeout") or 30)
         feed = _fetch_arxiv_feed(query, timeout)

@@ -132,3 +132,38 @@ users:
     assert updated.source.iacr_eprint.start_date == "2026-07-08"
     assert updated.source.iacr_eprint.end_date == "2026-07-22"
     assert updated.state.ignore_seen is True
+
+
+def test_apply_runtime_config_daily_range(config, tmp_path):
+    (tmp_path / "users.yaml").write_text(
+        """
+users:
+  user_a:
+    zotero:
+      user_id: 2
+      api_key: zotero-key
+    email:
+      receiver: user-a@example.com
+""",
+        encoding="utf-8",
+    )
+
+    updated = apply_runtime_config(
+        config,
+        RuntimeArgs(
+            user="user_a",
+            mode="daily-range",
+            start_date="2026-08-31",
+            end_date="2026-09-04",
+            send_email=True,
+        ),
+        root=tmp_path,
+    )
+
+    assert list(updated.executor.source) == ["arxiv", "iacr_eprint"]
+    assert updated.source.arxiv.start_date == "2026-08-31"
+    assert updated.source.arxiv.end_date == "2026-09-04"
+    assert updated.source.iacr_eprint.start_date == "2026-08-31"
+    assert updated.source.iacr_eprint.end_date == "2026-09-04"
+    assert updated.state.ignore_seen is True
+    assert updated.executor.send_empty is True

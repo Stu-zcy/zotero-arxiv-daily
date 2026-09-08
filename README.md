@@ -213,24 +213,25 @@ env:
 
 不要把 Secret 值写入 `users.yaml`、工作流 YAML、README、Repository Variables 或命令日志。
 
-### 3. 配置每天 09:07 推送
+### 3. 配置每天 09:00 推送
 
-GitHub cron 使用 UTC。北京时间 09:07 对应 UTC 01:07：
+GitHub cron 使用 UTC。北京时间 09:00 对应 UTC 01:00：
 
 ```yaml
 on:
   schedule:
-    - cron: "7 1 * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch:
 ```
 
-避开整点可以降低 GitHub Actions 高负载时的延迟或丢弃概率。定时运行会处理所有已配置用户；即使当天没有匹配论文，也会发送一封结果邮件。
+这是目标启动时间。GitHub 托管的定时工作流可能因平台负载延迟，不能保证在 09:00 整准启动。定时运行会处理所有已配置用户；即使当天没有匹配论文，也会发送一封结果邮件。
 
 ### 4. 手动补发
 
 打开 `Actions` -> `Send paper digest` -> `Run workflow`，可选择：
 
 - `mode=daily`：补发当天 arXiv + IACR 日报。
+- `mode=daily-range`：按 `start_date` 和 `end_date` 合并补发 arXiv + IACR 日报。
 - `mode=iacr-range`：按 `start_date` 和 `end_date` 补发 IACR 区间报告。
 - `user=all` 或用户 A：选择全部用户或单个用户。
 - `send_empty=true`：即使没有匹配论文也发送结果。

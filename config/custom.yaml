@@ -34,6 +34,9 @@ llm:
 source:
   arxiv:
     category: ["cs.CR"]
+    start_date: null
+    end_date: null
+    max_papers: null
     include_cross_list: false
     extract_full_text: false
     keyword_required: false

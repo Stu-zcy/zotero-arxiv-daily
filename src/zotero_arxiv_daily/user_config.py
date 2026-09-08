@@ -98,8 +98,8 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             raise ValueError(f"User '{args.user}' is not configured in users.yaml/users.local.yaml")
 
     mode = args.mode or "daily"
-    if mode not in {"daily", "monthly", "test-range", "iacr-range"}:
-        raise ValueError("mode must be one of: daily, monthly, test-range, iacr-range")
+    if mode not in {"daily", "daily-range", "monthly", "test-range", "iacr-range"}:
+        raise ValueError("mode must be one of: daily, daily-range, monthly, test-range, iacr-range")
 
     with open_dict(config):
         config.runtime = {
@@ -114,7 +114,7 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
         config.state.mode = mode
         config.state.path = f"state/{config.state.user}/seen.json"
         config.state.enabled = mode in {"daily", "monthly"}
-        config.state.ignore_seen = bool(args.ignore_seen) or mode in {"test-range", "iacr-range"}
+        config.state.ignore_seen = bool(args.ignore_seen) or mode in {"daily-range", "test-range", "iacr-range"}
 
         if user_cfg is not None:
             zotero_cfg = user_cfg.get("zotero") or {}
@@ -167,7 +167,26 @@ def apply_runtime_config(config: DictConfig, args: RuntimeArgs, root: Path | Non
             config.source.arxiv.include_cross_list = False
             config.source.arxiv.extract_full_text = False
             config.source.arxiv.keyword_required = False
+            config.source.arxiv.start_date = None
+            config.source.arxiv.end_date = None
             config.source.iacr_eprint.lookback_days = 1
+            config.source.iacr_eprint.start_date = None
+            config.source.iacr_eprint.end_date = None
+            config.source.iacr_eprint.categories = []
+            if args.send_email is not None:
+                config.executor.send_empty = bool(args.send_email)
+        elif mode == "daily-range":
+            if not args.start_date or not args.end_date:
+                raise ValueError("daily-range requires --start-date and --end-date")
+            config.executor.source = ["arxiv", "iacr_eprint"]
+            config.source.arxiv.category = ["cs.CR"]
+            config.source.arxiv.include_cross_list = False
+            config.source.arxiv.extract_full_text = False
+            config.source.arxiv.keyword_required = False
+            config.source.arxiv.start_date = args.start_date
+            config.source.arxiv.end_date = args.end_date
+            config.source.iacr_eprint.start_date = args.start_date
+            config.source.iacr_eprint.end_date = args.end_date
             config.source.iacr_eprint.categories = []
             if args.send_email is not None:
                 config.executor.send_empty = bool(args.send_email)

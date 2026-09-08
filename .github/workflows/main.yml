@@ -1,9 +1,9 @@
 name: Send paper digest
 
 on:
-  # 09:07 Asia/Shanghai = 01:07 UTC. Avoid the high-load top of the hour.
+  # 09:00 Asia/Shanghai = 01:00 UTC. Scheduled workflows may start later.
   schedule:
-    - cron: "7 1 * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -13,6 +13,7 @@ on:
         type: choice
         options:
           - daily
+          - daily-range
           - iacr-range
       user:
         description: "Recipient profile"
@@ -24,11 +25,11 @@ on:
           - chenyang
           - liruoyi
       start_date:
-        description: "Start date for iacr-range (YYYY-MM-DD)"
+        description: "Start date for a range mode (YYYY-MM-DD)"
         required: false
         type: string
       end_date:
-        description: "End date for iacr-range (YYYY-MM-DD)"
+        description: "End date for a range mode (YYYY-MM-DD)"
         required: false
         type: string
       send_empty:
@@ -40,7 +41,7 @@ on:
 jobs:
   calculate-and-send:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -65,7 +66,7 @@ jobs:
             user_args=(--user "${{ inputs.user }}")
           fi
           args=(run src/zotero_arxiv_daily/main.py "${user_args[@]}" --mode "${{ inputs.mode || 'daily' }}" --send-email "${{ github.event_name == 'schedule' || inputs.send_empty }}" executor.max_paper_num=10)
-          if [ "${{ inputs.mode || 'daily' }}" = "iacr-range" ]; then
+          if [[ "${{ inputs.mode || 'daily' }}" == *-range ]]; then
             args+=(--start-date "${{ inputs.start_date }}" --end-date "${{ inputs.end_date }}")
           fi
           uv "${args[@]}"

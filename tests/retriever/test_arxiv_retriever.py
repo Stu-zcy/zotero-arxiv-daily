@@ -138,6 +138,37 @@ def test_arxiv_retriever_accepts_feed_without_attribute_title(config, mock_feedp
     assert retriever._retrieve_raw_papers() == []
 
 
+def test_arxiv_retriever_uses_date_query_for_range(config, monkeypatch):
+    captured = {}
+    results = [
+        SimpleNamespace(primary_category="cs.CR"),
+        SimpleNamespace(primary_category="cs.AI"),
+    ]
+
+    class FakeClient:
+        def __init__(self, **kw):
+            pass
+
+        def results(self, search):
+            captured["search"] = search
+            return iter(results)
+
+    with open_dict(config):
+        config.source.arxiv.category = ["cs.CR"]
+        config.source.arxiv.start_date = "2026-08-31"
+        config.source.arxiv.end_date = "2026-09-04"
+        config.source.arxiv.include_cross_list = False
+        config.source.arxiv.keyword_required = False
+
+    monkeypatch.setattr(arxiv_retriever.arxiv, "Client", FakeClient)
+
+    papers = ArxivRetriever(config)._retrieve_raw_papers()
+
+    assert papers == [results[0]]
+    assert captured["search"].query == "(cat:cs.CR) AND submittedDate:[202608310000 TO 202609042359]"
+    assert captured["search"].sort_by == arxiv_retriever.arxiv.SortCriterion.SubmittedDate
+
+
 def test_arxiv_profile_filter_keeps_crypto_and_drops_generic_ai(config):
     with open_dict(config):
         config.source.arxiv.keyword_required = True

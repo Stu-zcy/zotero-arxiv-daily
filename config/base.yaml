@@ -9,6 +9,9 @@ zotero:
 source:
   arxiv:
     category: null # The categories of target arxiv papers. Find the abbr of your research area from [here](https://arxiv.org/category_taxonomy). Example: ["cs.AI","cs.CV","cs.LG","cs.CL"]
+    start_date: null # Inclusive submission date for historical daily-range reports.
+    end_date: null # Inclusive submission date for historical daily-range reports.
+    max_papers: null # Optional cap for historical range candidates.
     include_cross_list: false # Whether to include arXiv cross-list papers in subscribed categories. Example: true
     extract_full_text: false # Daily mode should normally use title/abstract only; full-text extraction is slow and can time out.
     keyword_required: false
